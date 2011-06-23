@@ -1,0 +1,6 @@
+Django oAuth2 App
+=====================================
+
+oAuth2: http://tools.ietf.org/html/draft-ietf-oauth-v2-10
+
+Based on:  http://code.google.com/p/django-oauth2
