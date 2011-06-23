@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 # Also requires python-dev and python-openssl
 setup(
 
-    name = "oAuth2",
+    name = "oAuth2-app",
 
     version = "0.0.1",
 
@@ -17,6 +17,6 @@ setup(
     description = "Django oAuth2 App",
     license = "MIT License",
     keywords = "django oauth2 oauth app",
-    url = "https://github.com/hiidef/oauth2"
+    url = "https://github.com/hiidef/oauth2_app"
 
 )

@@ -14,7 +14,7 @@ def add_parameters(url, parameters):
 
 def add_fragments(url, fragments):
     parts = list(urlparse(url))
-    parts[5] = urlencode(parse_qsl(parts[5]) + parameters.items())
+    parts[5] = urlencode(parse_qsl(parts[5]) + fragments.items())
     return urlunparse(parts)
     
     

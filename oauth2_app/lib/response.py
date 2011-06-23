@@ -2,7 +2,7 @@
 
 
 from ..exceptions import OAuth2Exception
-
+from itertools import combinations
 
 TOKEN = 1
 CODE = 2
@@ -12,9 +12,9 @@ RESPONSE_TYPES = {
     "code":CODE,
     "code_and_token":CODE_AND_TOKEN}
 RESPONSE_OPTIONS = RESPONSE_TYPES.values()
-RESPONSE_CHOICES = 0
+RESPONSE_CHOICES = []
 for x in range(1, len(RESPONSE_OPTIONS) + 1):
-    RESPONSE_CHOICES += [reduce(lambda a,b:a|b, y) for y in combinations(RESPONSE_CHOICES, x)]
+    RESPONSE_CHOICES += [reduce(lambda a, b:a|b, y) for y in combinations(RESPONSE_OPTIONS, x)]
 
 
 class InvalidResponseType(OAuth2Exception):

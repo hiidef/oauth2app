@@ -7,9 +7,6 @@ from .exceptions import OAuth2Exception
 class AuthenticationException(OAuth2Exception):
     error = "invalid_request"
 
-class NotImplemented(OAuth2Exception):
-    pass
-
 
 class Authenticator(object):
     
@@ -24,20 +21,20 @@ class Authenticator(object):
     def get_user(self):
         if not self.valid:
             self.validate()
-        raise NotImplemented()
+        raise NotImplementedError()
         
     user = property(get_user)
     
     def get_scope(self):
         if not self.valid:
             self.validate()
-        raise NotImplemented()
+        raise NotImplementedError()
     
     scope = property(get_scope)
 
     def get_client(self):
         if not self.valid:
             self.validate()
-        raise NotImplemented()
+        raise NotImplementedError()
     
     client = property(get_client)

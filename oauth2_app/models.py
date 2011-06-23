@@ -5,12 +5,9 @@ import time
 from hashlib import sha512
 from uuid import uuid4
 from django.db import models
-from django.utils.encoding import smart_str
 from django.contrib.auth.models import User
-from django.utils.hashcompat import sha_constructor
-from django.utils.translation import ugettext_lazy as _
 from .consts import *
-from .lib.response import RESPONSE_CHOICES
+from .lib.response import RESPONSE_CHOICES, CODE
 
 
 class TimestampGenerator(object):
@@ -19,7 +16,7 @@ class TimestampGenerator(object):
         self.seconds = seconds
 
     def __call__(self):
-        return int(time.time()) + seconds
+        return int(time.time()) + self.seconds
 
 
 class KeyGenerator(object):
@@ -45,8 +42,7 @@ class Client(models.Model):
         default=KeyGenerator(CLIENT_SECRET_LENGTH))
     redirect_uri = models.URLField(null=True, blank=True)
     authorized_reponse_types = models.PositiveIntegerField(
-        choices=RESPONSE_CHOICES, 
-        default=0)
+        default=CODE)
     
 
 class AccessRange(models.Model):
@@ -66,8 +62,11 @@ class AccessToken(models.Model):
         null=True, 
         max_length=REFRESH_TOKEN_LENGTH, 
         default=KeyGenerator(REFRESH_TOKEN_LENGTH))
-    issue = PositiveIntegerField(editable=False, default=TimestampGenerator())
-    expire = PositiveIntegerField(default=TimestampGenerator(ACCESS_TOKEN_EXPIRATION))
+    issue = models.PositiveIntegerField(
+        editable=False, 
+        default=TimestampGenerator())
+    expire = models.PositiveIntegerField(
+        default=TimestampGenerator(ACCESS_TOKEN_EXPIRATION))
     client = models.ForeignKey(Client)
     user = models.ForeignKey(User, related_name='access_tokens')
     scope = models.TextField(null=True, blank=True)
@@ -80,8 +79,11 @@ class Code(models.Model):
         max_length=CODE_KEY_LENGTH, 
         default=KeyGenerator(CODE_KEY_LENGTH))
     client = models.ForeignKey(Client)
-    issue = PositiveIntegerField(editable=False, default=TimestampGenerator())
-    expire = PositiveIntegerField(default=TimestampGenerator(CODE_EXPIRATION))
+    issue = models.PositiveIntegerField(
+        editable=False, 
+        default=TimestampGenerator())
+    expire = models.PositiveIntegerField(
+        default=TimestampGenerator(CODE_EXPIRATION))
     redirect_uri = models.URLField(null=True, blank=True)
     scope = models.TextField(null=True, blank=True)
     client = models.ForeignKey(Client)
