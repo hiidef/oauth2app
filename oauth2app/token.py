@@ -1,12 +1,14 @@
 #-*- coding: utf-8 -*-
-
+from base64 import b64encode
 from django.http import HttpResponseBadRequest, HttpResponse
 from simplejson import dumps
 from .exceptions import OAuth2Exception
-from .consts import ACCESS_TOKEN_EXPIRATION
+from .consts import ACCESS_TOKEN_EXPIRATION, REFRESH_TOKEN_LENGTH
 from .lib.uri import normalize
-from .authenticate import Authenticator, AuthenticationException
-from .models import Client, AccessRange, Code, AccessToken
+from .authenticate import AuthenticationException
+from .models import Client, AccessRange, Code, AccessToken, TimestampGenerator, KeyGenerator
+from django.contrib import auth
+from django.contrib.auth import authenticate
 
 class AccessTokenException(OAuth2Exception):
     pass
@@ -40,7 +42,7 @@ class InvalidScope(AccessTokenException):
     error = 'invalid_scope'
 
 
-def token(request):
+def TokenResponse(request):
     token_generator = TokenGenerator(request)
     try:
         token_generator.validate()
@@ -59,6 +61,8 @@ class TokenGenerator(object):
     valid = False
     code = None
     client = None
+    access_token = None
+    user = None
     
     def __init__(self, request):
         self.grant_type = request.POST.get('grant_type')
@@ -70,11 +74,9 @@ class TokenGenerator(object):
         self.redirect_uri = request.REQUEST.get('redirect_uri')
         # refresh_token, see 6.  Refreshing an Access Token
         self.refresh_token = request.POST.get('refresh_token')
-        # client_credentials, see 4.4.2. Access Token Request
         # password, see 4.3.2. Access Token Request
         self.username = request.POST.get('username')
         self.password = request.POST.get('password')
-        self.user = request.user
         self.request = request   
 
     def validate(self):
@@ -87,8 +89,7 @@ class TokenGenerator(object):
             raise InvalidRequest('No grant_type provided.')
         if self.grant_type not in [
                 "authorization_code", 
-                "refresh_token", 
-                "client_credentials", 
+                "refresh_token",  
                 "password"]:
             raise UnsupportedGrantType('No such grant type: %s' % self.grant_type)
         if self.client_id is None:
@@ -109,41 +110,64 @@ class TokenGenerator(object):
             self._validate_authorization_code()
         elif self.grant_type == "refresh_token":
             self._validate_refresh_token()
-        elif self.grant_type == "client_credentials":
-            self._validate_authorization_code()
         elif self.grant_type == "password":
-            self._validate_authorization_code()
+            self._validate_password()
         else:
             raise InvalidRequest('Unable to validate grant type.')
-        
+        self.valid = 1
+    
     def _validate_authorization_code(self):
         if self.code_key is None:
             raise InvalidRequest('No code_key provided')
         try: 
             self.code = Code.objects.get(key=self.code_key)
         except Code.DoesNotExist:
-            raise InvalidGrant('No such code: %s' % self.code_key)
+            raise InvalidRequest('No such code: %s' % self.code_key)
         self.scope = self.code.scope
         if self.redirect_uri is None:
             raise InvalidRequest('No redirect_uri')
         if normalize(self.redirect_uri) != normalize(self.code.redirect_uri):
             raise InvalidRequest("redirect_uri doesn't match")
-        if self.client_secret is None:
-            authenticator = Authenticator(self.request)
-            if self.code.user != authenticator.user:
+        if self.client_secret is None and "HTTP_AUTHORIZATION" in self.request.META:
+            auth, value = self.request.META["HTTP_AUTHORIZATION"].split()[0:2]
+            if auth.lower() == "basic":
+                if value != b64encode("%s:%s" % (self.client.key, self.client.secret)):
+                    raise InvalidClient('Client authentication failed.')
+            else:
                 raise InvalidClient('Client authentication failed.')
         elif self.client_secret != self.client.secret:
             raise InvalidClient('Client authentication failed.')
 
     def _validate_password(self):
-        pass
+        if self.username is None:
+            raise InvalidRequest('No username')
+        if self.password is None:
+            raise InvalidRequest('No password')
+        if "HTTP_AUTHORIZATION" in self.request.META:
+            auth, value = self.request.META["HTTP_AUTHORIZATION"].split()[0:2]
+            if auth.lower() == "basic":
+                if value != b64encode("%s:%s" % (self.client.key, self.client.secret)):
+                    raise InvalidClient('Client authentication failed.')
+            else:
+                raise InvalidClient('Client authentication failed.')
+        else:
+            raise InvalidClient('Client authentication failed.')
+        user = authenticate(username=self.username, password=self.password)
+        if user is not None:
+            if not user.is_active:
+                raise InvalidRequest('Inactive user.')
+        else:
+            raise InvalidRequest('User authentication failed.')
+        self.user = user
         
     def _validate_refresh_token(self):
-        pass
-        
-    def _validate_client_credentials(self):
-        pass
-    
+        if self.refresh_token is None:
+            raise InvalidRequest('No refresh_token')
+        try: 
+            self.access_token = AccessToken.objects.get(refresh_token=self.refresh_token)
+        except AccessToken.DoesNotExist:
+            raise InvalidRequest('No such refresh token: %s' % self.refresh_token) 
+            
     def response(self):
         if not self.valid:
             raise UnvalidatedRequest("This request is invalid or has not been validated.")
@@ -175,12 +199,16 @@ class TokenGenerator(object):
             scope=self.scope)
         
     def _get_password_token(self):
-        pass
+        return AccessToken.objects.create(
+            user=self.user,
+            client=self.client,
+            scope=self.scope)
         
     def _get_refresh_token(self):
-        pass
+        self.access_token.refresh_token = KeyGenerator(REFRESH_TOKEN_LENGTH)()
+        self.access_token.expire = TimestampGenerator(ACCESS_TOKEN_EXPIRATION)()
+        self.access_token.save()
+        return self.access_token
         
-    def _get_client_credentials_token(self):
-        pass
 
 

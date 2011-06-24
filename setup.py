@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 # Also requires python-dev and python-openssl
 setup(
 
-    name = "oAuth2-app",
+    name = "oauth2app",
 
     version = "0.0.1",
 

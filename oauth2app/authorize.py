@@ -10,7 +10,7 @@ from .lib.uri import add_parameters, add_fragments, normalize
 
 
 class AuthorizationException(OAuth2Exception):
-    pass
+    error = 'invalid_request'
 
 
 class MissingRedirectURI(OAuth2Exception):
@@ -109,10 +109,11 @@ class Authorizer(object):
             if self.client.redirect_uri is None:
                 raise MissingRedirectURI("""No redirect_uri 
                     provided or registered.""")
-        elif normalize(self.redirect_uri) != normalize(self.client.redirect_uri):
-            self.redirect_uri = self.client.redirect_uri
-            raise RedirectURIMismatch("""Registered redirect_uri doesn't match
-                provided redirect_uri.""")
+        elif self.client.redirect_uri is not None:
+            if normalize(self.redirect_uri) != normalize(self.client.redirect_uri):
+                self.redirect_uri = self.client.redirect_uri
+                raise RedirectURIMismatch("""Registered redirect_uri doesn't
+                    match provided redirect_uri.""")
         self.redirect_uri = self.redirect_uri or self.client.redirect_uri
         # Check response type
         if self.response_type is None:

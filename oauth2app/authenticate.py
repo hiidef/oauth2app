@@ -1,19 +1,28 @@
 #-*- coding: utf-8 -*-
 
-
 from .exceptions import OAuth2Exception
+from .models import Client
 
 
 class AuthenticationException(OAuth2Exception):
     error = "invalid_request"
 
 
+class InvalidRequest(AuthenticationException):
+    error = 'invalid_request'
+
+
+class InvalidClient(AuthenticationException):
+    error = 'invalid_client'
+
+
 class Authenticator(object):
     
     valid = False
+    client = None
     
     def __init__(self, request):
-        pass
+        self.client_id = request.REQUEST.get('client_id')
     
     def validate(self):
         self.valid = True

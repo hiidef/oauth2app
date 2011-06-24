@@ -35,7 +35,8 @@ class Client(models.Model):
     key = models.CharField(
         unique=True, 
         max_length=CLIENT_KEY_LENGTH, 
-        default=KeyGenerator(CLIENT_KEY_LENGTH))
+        default=KeyGenerator(CLIENT_KEY_LENGTH),
+        db_index=True)
     secret = models.CharField(
         unique=True, 
         max_length=CLIENT_SECRET_LENGTH, 
@@ -48,27 +49,31 @@ class Client(models.Model):
 class AccessRange(models.Model):
     
     # 255 max_length when unique with mysql
-    key = models.CharField(unique=True, max_length=255) 
+    key = models.CharField(unique=True, max_length=255, db_index=True) 
     description = models.TextField(blank=True)
 
 
 class AccessToken(models.Model):
     
     token = models.CharField(
+        unique=True,
         max_length=ACCESS_TOKEN_LENGTH, 
-        default=KeyGenerator(ACCESS_TOKEN_LENGTH))
+        default=KeyGenerator(ACCESS_TOKEN_LENGTH),
+        db_index=True)
     refresh_token = models.CharField(
+        unique=True, 
         blank=True, 
         null=True, 
         max_length=REFRESH_TOKEN_LENGTH, 
-        default=KeyGenerator(REFRESH_TOKEN_LENGTH))
+        default=KeyGenerator(REFRESH_TOKEN_LENGTH),
+        db_index=True)
     issue = models.PositiveIntegerField(
         editable=False, 
         default=TimestampGenerator())
     expire = models.PositiveIntegerField(
         default=TimestampGenerator(ACCESS_TOKEN_EXPIRATION))
     client = models.ForeignKey(Client)
-    user = models.ForeignKey(User, related_name='access_tokens')
+    user = models.ForeignKey(User)
     scope = models.TextField(null=True, blank=True)
     refreshable = models.BooleanField(default=REFRESHABLE)
 
@@ -76,8 +81,10 @@ class AccessToken(models.Model):
 class Code(models.Model):
     
     key = models.CharField(
+        unique=True, 
         max_length=CODE_KEY_LENGTH, 
-        default=KeyGenerator(CODE_KEY_LENGTH))
+        default=KeyGenerator(CODE_KEY_LENGTH),
+        db_index=True)
     client = models.ForeignKey(Client)
     issue = models.PositiveIntegerField(
         editable=False, 
@@ -87,5 +94,5 @@ class Code(models.Model):
     redirect_uri = models.URLField(null=True, blank=True)
     scope = models.TextField(null=True, blank=True)
     client = models.ForeignKey(Client)
-    user = models.ForeignKey(User, related_name='codes')
+    user = models.ForeignKey(User)
 
