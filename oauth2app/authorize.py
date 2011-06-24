@@ -1,6 +1,6 @@
 #-*- coding: utf-8 -*-
 
-
+from urllib import urlencode
 from django.http import absolute_http_url_re, HttpResponseRedirect
 from .exceptions import OAuth2Exception
 from .models import Client, AccessRange, Code, AccessToken
@@ -87,7 +87,7 @@ class Authorizer(object):
         self.state = request.REQUEST.get('state')
         self.user = request.user
         self.request = request
-
+        
     def validate(self):
         try:
             self._validate()
@@ -156,7 +156,16 @@ class Authorizer(object):
             qs['state'] = self.state
         redirect_uri = add_parameters(self.redirect_uri, qs)
         return HttpResponseRedirect(redirect_uri)
-    
+ 
+    def query_string(self):
+        if not self.valid:
+            raise UnvalidatedRequest("""This request is invalid or has not 
+                been validated.""")
+        return urlencode({
+            "response_type":self.response_type,
+            "client_id":self.client_id,
+            "redirect_uri":self.redirect_uri})
+        
     def grant_redirect(self):
         if not self.valid:
             raise UnvalidatedRequest("""This request is invalid or has not 

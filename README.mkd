@@ -4,3 +4,84 @@ Django oAuth2 App
 oAuth2: http://tools.ietf.org/html/draft-ietf-oauth-v2-10
 
 Based on:  http://code.google.com/p/django-oauth2
+
+Installation
+------------
+
+If easy_install is available, you can use:
+
+    easy_install https://github.com/hiidef/oauth2app/tarball/master
+
+Basic Usage
+-----------
+
+In settings.py, add 'oauth2app' to INSTALLED_APPS.
+
+
+	INSTALLED_APPS = (
+	...,
+	'oauth2app' 
+	)
+
+
+In urls.py, add /oauth2/authorize and /oauth2/token views to a new or existing app.
+
+
+	urlpatterns += patterns('mysite.yourapp.views',
+	    # Account
+	    (r'^oauth2/authorize/?$',         'authorize'),
+	    (r'^oauth2/token/?$',             'token'),
+	)
+
+
+Create authorize and token handlers. Depending on your usage, the authorize handler will probably want
+to utilize a form that verifies the user wants to grant access to the requesting client. 'authorizer.client.name' 
+will return the requesting client name, authorizer.query_string() will return a query string to regenerate the 
+oAuth2 GET parameters to be used with the authorization form POST.
+
+
+	from django import forms
+	from django.views.decorators.csrf import csrf_exempt
+	from django.http import HttpResponseRedirect
+	from django.shortcuts import render_to_response
+	from django.contrib.auth.decorators import login_required
+	from oauth2app.authorize import Authorizer, MissingRedirectURI, AuthorizationException
+	from oauth2app.authorize import UnvalidatedRequest, UnauthenticatedUser
+	from oauth2app.token import TokenResponse
+
+	# Uses CSRF to prevent
+	class oAuth2Form(forms.Form):
+	    connect = forms.IntegerField(required=True)
+
+	@login_required
+	def authorize(request):
+	    authorizer = Authorizer(request)
+	    try:
+	        authorizer.validate()
+	    except MissingRedirectURI, e:
+	        # The redirect is malformed. Return a 404 or give a 
+			# special error message.
+	        pass
+	    except AuthorizationException, e:
+	        # The request is malformed or invalid. Automatically 
+			# redirects to the provided redirect URL.
+	        return authorizer.error_redirect()
+	    if request.method == 'GET':
+	        return render_to_response(
+	            'your_template_name.html', 
+	            {	"name":authorizer.client.name,
+					"query_string":authorizer.query_string()})
+	    elif request.method == 'POST':
+	        form = oAuth2Form(request.POST)
+	        if form.is_valid():
+	            if form.cleaned_data["connect"] == 1:
+	                return authorizer.grant_redirect()
+	            else:
+	                return authorizer.error_redirect()
+	    return HttpResponseRedirect("/")
+
+
+@csrf_exempt
+def token(request):
+    return TokenResponse(request)
+
