@@ -81,7 +81,7 @@ oAuth2 GET parameters to be used with the authorization form POST.
 	    return HttpResponseRedirect("/")
 
 
-@csrf_exempt
-def token(request):
-    return TokenResponse(request)
+	@csrf_exempt
+	def token(request):
+	    return TokenResponse(request)
 
