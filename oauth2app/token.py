@@ -10,6 +10,7 @@ from .models import Client, AccessRange, Code, AccessToken, TimestampGenerator, 
 from django.contrib import auth
 from django.contrib.auth import authenticate
 
+
 class AccessTokenException(OAuth2Exception):
     pass
 
@@ -55,6 +56,7 @@ def TokenResponse(request):
             "error":e.error,
             "error_description":e.message}))    
     return token_generator.response()
+
 
 class TokenGenerator(object):
     
