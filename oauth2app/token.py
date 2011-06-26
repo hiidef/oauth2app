@@ -3,7 +3,7 @@ from base64 import b64encode
 from django.http import HttpResponseBadRequest, HttpResponse
 from simplejson import dumps
 from .exceptions import OAuth2Exception
-from .consts import ACCESS_TOKEN_EXPIRATION, REFRESH_TOKEN_LENGTH
+from .consts import ACCESS_TOKEN_EXPIRATION, REFRESH_TOKEN_LENGTH, MAC_KEY
 from .lib.uri import normalize
 from .authenticate import AuthenticationException
 from .models import Client, AccessRange, Code, AccessToken, TimestampGenerator, KeyGenerator
@@ -179,11 +179,12 @@ class TokenGenerator(object):
             access_token = self._get_refresh_token()
         elif self.grant_type == "password":
             access_token = self._get_password_token()
-        elif self.grant_type == "client_credentials":
-            access_token = self._get_client_credentials_token()
         data = {
             'access_token': access_token.token,
             'expire_in': ACCESS_TOKEN_EXPIRATION}
+        if MAC_KEY:
+            data["mac_key"] = "hmac-sha-256"
+            data["mac_algorithm"] = "hmac-sha-256"
         if access_token.refreshable:
             data['refresh_token'] = access_token.refresh_token
         if self.scope:
@@ -195,10 +196,11 @@ class TokenGenerator(object):
         return response
 
     def _get_authorization_code_token(self):
-        return AccessToken.objects.create(
+        access_token = AccessToken.objects.create(
             user=self.code.user,
             client=self.client,
             scope=self.scope)
+        self.code.delete()
         
     def _get_password_token(self):
         return AccessToken.objects.create(

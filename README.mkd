@@ -1,9 +1,19 @@
-Django oAuth2 App
+Django OAuth2 App
 =====================================
 
-oAuth2: http://tools.ietf.org/html/draft-ietf-oauth-v2-10
+OAuth2: 
 
 Based on:  http://code.google.com/p/django-oauth2
+
+Features
+--------
+
+* Support for OAuth 2.0 draft 16, http://tools.ietf.org/html/draft-ietf-oauth-v2-16
+
+OAuth 2 protocol compliance
+---------------------------
+
+The current implementation of the package is based on OAuth2 draft 16. 
 
 Installation
 ------------
@@ -37,7 +47,7 @@ In urls.py, add /oauth2/authorize and /oauth2/token views to a new or existing a
 Create authorize and token handlers. Depending on your usage, the authorize handler will probably want
 to utilize a form that verifies the user wants to grant access to the requesting client. 'authorizer.client.name' 
 will return the requesting client name, authorizer.query_string() will return a query string to regenerate the 
-oAuth2 GET parameters to be used with the authorization form POST.
+OAuth2 GET parameters to be used with the authorization form POST.
 
 
 	from django import forms
@@ -50,7 +60,7 @@ oAuth2 GET parameters to be used with the authorization form POST.
 	from oauth2app.token import TokenResponse
 
 	# Uses CSRF to prevent
-	class oAuth2Form(forms.Form):
+	class OAuth2Form(forms.Form):
 	    connect = forms.IntegerField(required=True)
 
 	@login_required
@@ -72,7 +82,7 @@ oAuth2 GET parameters to be used with the authorization form POST.
 	            {	"name":authorizer.client.name,
 					"query_string":authorizer.query_string()})
 	    elif request.method == 'POST':
-	        form = oAuth2Form(request.POST)
+	        form = OAuth2Form(request.POST)
 	        if form.is_valid():
 	            if form.cleaned_data["connect"] == 1:
 	                return authorizer.grant_redirect()

@@ -1,1 +1,3 @@
+.DS_Store
+oauth2app.egg-info/
 *.pyc

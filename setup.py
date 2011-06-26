@@ -14,7 +14,7 @@ setup(
     # metadata for upload to PyPI
     author = "John Wehr",
     author_email = "johnwehr@gmail.com",
-    description = "Django oAuth2 App",
+    description = "Django OAuth2 App",
     license = "MIT License",
     keywords = "django oauth2 oauth app",
     url = "https://github.com/hiidef/oauth2_app"
