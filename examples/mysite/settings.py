@@ -105,3 +105,5 @@ LOGGING = {
         },
     }
 }
+
+DS_ROOT = os.path.join(os.path.dirname(__file__), '../../docs')
