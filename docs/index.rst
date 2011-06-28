@@ -7,7 +7,8 @@ Usage
 .. toctree::
    :maxdepth: 2
    
-   settings
+   Example Django Site <mysite>
+   Settings <settings>
 
 Module Reference
 ----------------
