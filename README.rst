@@ -30,62 +30,87 @@ Sync the DB models. ::
 
 In urls.py, add /oauth2/authorize and /oauth2/token views to a new or existing app. ::
 
-
-	urlpatterns += patterns('mysite.yourapp.views',
-	    # Account
-	    (r'^oauth2/authorize/?$',         'authorize'),
-	    (r'^oauth2/token/?$',             'token'),
+	urlpatterns += patterns('',
+		(r'^oauth2/missing_redirect_uri/?$',   'mysite.oauth2.views.missing_redirect_uri'),
+	    (r'^oauth2/authorize/?$',         	   'mysite.oauth2.views.authorize'),
+	    (r'^oauth2/token/?$',             	   'oauth2app.token.handler'),
 	)
+	
+Create client models.
 
+	from oauth2app.models import Client
 
-Create authorize and token handlers. Depending on your usage, the authorize handler will probably want
-to utilize a form that verifies the user wants to grant access to the requesting client. 'authorizer.client.name' 
-will return the requesting client name, authorizer.query_string() will return a query string to regenerate the 
-OAuth 2.0 GET parameters to be used with the authorization form POST. ::
+	Client.objects.create(
+	    name="My Sample OAuth 2.0 Client",
+	    user=user)
 
-	from django import forms
-	from django.views.decorators.csrf import csrf_exempt
-	from django.http import HttpResponseRedirect
+Create authorize and missing_redirect_uri handlers. ::
+
 	from django.shortcuts import render_to_response
+	from django.http import HttpResponseRedirect
+	from django.template import RequestContext
 	from django.contrib.auth.decorators import login_required
-	from oauth2app.authorize import Authorizer, MissingRedirectURI, 
-	from oauth2app.authorize import AuthorizationException
+	from oauth2app.authorize import Authorizer, MissingRedirectURI, AuthorizationException
 	from oauth2app.authorize import UnvalidatedRequest, UnauthenticatedUser
-	from oauth2app.token import TokenResponse
+	from django import forms
 
-	# Uses CSRF to prevent request forgery
-	class OAuth2Form(forms.Form):
-	    connect = forms.IntegerField(required=True)
+
+	class AuthorizeForm(forms.Form):
+	    pass
+
+
+	@login_required
+	def missing_redirect_uri(request):
+	    return render_to_response(
+	        'oauth2/missing_redirect_uri.html', 
+	        {}, 
+	        RequestContext(request))
+
 
 	@login_required
 	def authorize(request):
 	    authorizer = Authorizer(request)
 	    try:
+			# Validate the request.
 	        authorizer.validate()
 	    except MissingRedirectURI, e:
-	        # The redirect is malformed. Return a 404 or give a 
-			# special error message.
-	        pass
+			# No redirect_uri was specified.
+	        return HttpResponseRedirect("/oauth2/missing_redirect_uri")
 	    except AuthorizationException, e:
-	        # The request is malformed or invalid. Automatically 
-			# redirects to the provided redirect URL.
+	        # The request is malformed or invalid. Redirect to redirect_uri with error params.
 	        return authorizer.error_redirect()
 	    if request.method == 'GET':
+	        template = {}
+			# Use any form, make sure it has CSRF protections.
+	        template["form"] = AuthorizeForm()
+			# Appends the original OAuth2 parameters.
+			template["form_action"] = '/oauth2/authorize?%s' % authorizer.query_string
 	        return render_to_response(
-	            'your_template_name.html', 
-	            {	"name":authorizer.client.name,
-					"query_string":authorizer.query_string()})
+	            'oauth2/authorize.html', 
+	            template, 
+	            RequestContext(request))
 	    elif request.method == 'POST':
-	        form = OAuth2Form(request.POST)
+	        form = AuthorizeForm(request.POST)
 	        if form.is_valid():
-	            if form.cleaned_data["connect"] == 1:
+	            if request.POST.get("connect") == "Yes":
+					# User agrees. Redirect to redirect_uri with success params.
 	                return authorizer.grant_redirect()
 	            else:
+					# User refuses. Redirect to redirect_uri with error params.
 	                return authorizer.error_redirect()
 	    return HttpResponseRedirect("/")
 
+Authenticate requests. ::
 
-	@csrf_exempt
-	def token(request):
-	    return TokenResponse(request)
+	from oauth2app.authenticate import Authenticator, AuthenticationException
 
+	def email(request):
+	    authenticator = Authenticator(request)
+	    try:
+			# Validate the request.
+	        authenticator.validate()
+	    except AuthenticationException:
+			# Return a JSON encoded error response.
+	        return authenticator.error_response()
+		# Return a JSON encoded success response.
+	    return authenticator.grant_response({"email":request.user.email})    

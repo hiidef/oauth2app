@@ -46,7 +46,6 @@ def authorize(request):
             template, 
             RequestContext(request))
     elif request.method == 'POST':
-        print request.POST
         form = AuthorizeForm(request.POST)
         if form.is_valid():
             if request.POST.get("connect") == "Yes":
