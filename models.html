@@ -1,0 +1,335 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Models &mdash; Django OAuth 2.0 Server App v0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Django OAuth 2.0 Server App v0.1.0 documentation" href="index.html" />
+    <link rel="next" title="Settings" href="settings.html" />
+    <link rel="prev" title="Access Token Generation" href="token.html" /> 
+  </head>
+  <body>
+	<div id="header">
+	     <h1 class="hd"><a href="http://hiidef.com/" onclick="return false" title="HiiDef Inc."><span class="hd_hidden">HiiDef Inc.</span></a></h1>
+	     <ul class="hd_topnav">
+			<li><a href="http://hiidef.com/products" title="Products">Products</a></li>
+	         <li><a href="http://hiidef.com/team" title="Team">Team</a></li>
+	         <li><a href="http://blog.hiidef.com" title="Blog">Blog</a></li>
+	         <li><a href="http://hiidef.com/jobs" title="Jobs">Jobs</a></li>
+			 <li><a href="http://hiidef.github.com/" title="Code">Code</a></li>
+	         <li class="contact"><a href="mailto:hello@hiidef.com">hello@hiidef.com</a></li>
+	     </ul>
+	     <div id="hero">
+	         <h2 class="hd">Models</h2>
+	     </div>
+    <div class="hd_related">
+      <ul class="right">
+        <li style="margin-right: 10px">
+          &nbsp;<a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li >
+          &nbsp;<a href="py-modindex.html" title="Python Module Index"
+             >modules</a>&nbsp; |&nbsp;</li>
+        <li >
+          &nbsp;<a href="settings.html" title="Settings"
+             accesskey="N">next</a>&nbsp; |&nbsp;</li>
+        <li >
+          &nbsp;<a href="token.html" title="Access Token Generation"
+             accesskey="P">previous</a>&nbsp; |&nbsp;</li>
+	  </ul>
+	  <ul>
+        <li>&nbsp;<a href="index.html">Django OAuth 2.0 Server App v0.1.0 documentation</a></li>
+      </ul>
+    </div>
+	 </div>
+	
+<div id="main">
+<div class="hd_top"></div>  
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="models">
+<h1>Models<a class="headerlink" href="#models" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-oauth2app.models">
+<span id="module-reference"></span><h2>Module Reference<a class="headerlink" href="#module-oauth2app.models" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="oauth2app.models.AccessRange">
+<em class="property">class </em><tt class="descclassname">oauth2app.models.</tt><tt class="descname">AccessRange</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/oauth2app/models.html#AccessRange"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.models.AccessRange" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stores access range data, also known as scope.</p>
+<p><strong>Args:</strong></p>
+<ul class="simple">
+<li><em>key:</em> A string representing the access range scope. Used in access 
+token requests.</li>
+</ul>
+<p><strong>Kwargs:</strong></p>
+<ul class="simple">
+<li><em>description:</em> A string representing the access range description. 
+<em>Default None</em></li>
+</ul>
+<dl class="exception">
+<dt id="oauth2app.models.AccessRange.DoesNotExist">
+<em class="property">exception </em><tt class="descname">DoesNotExist</tt><a class="headerlink" href="#oauth2app.models.AccessRange.DoesNotExist" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="exception">
+<dt id="oauth2app.models.AccessRange.MultipleObjectsReturned">
+<em class="property">exception </em><tt class="descclassname">AccessRange.</tt><tt class="descname">MultipleObjectsReturned</tt><a class="headerlink" href="#oauth2app.models.AccessRange.MultipleObjectsReturned" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="oauth2app.models.AccessRange.accesstoken_set">
+<tt class="descclassname">AccessRange.</tt><tt class="descname">accesstoken_set</tt><a class="headerlink" href="#oauth2app.models.AccessRange.accesstoken_set" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="oauth2app.models.AccessRange.code_set">
+<tt class="descclassname">AccessRange.</tt><tt class="descname">code_set</tt><a class="headerlink" href="#oauth2app.models.AccessRange.code_set" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="oauth2app.models.AccessToken">
+<em class="property">class </em><tt class="descclassname">oauth2app.models.</tt><tt class="descname">AccessToken</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/oauth2app/models.html#AccessToken"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.models.AccessToken" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stores access token data.</p>
+<p><strong>Args:</strong></p>
+<ul class="simple">
+<li><em>client:</em> A oauth2app.models.Client object</li>
+<li><em>user:</em> A django.contrib.auth.models.User object</li>
+</ul>
+<p><strong>Kwargs:</strong></p>
+<ul class="simple">
+<li><em>token:</em> A string representing the access key token. <em>Default 10 
+character random string</em></li>
+<li><em>refresh_token:</em> A string representing the access key token. <em>Default 10 
+character random string</em></li>
+<li><em>expire:</em> A positive integer timestamp representing the access token&#8217;s 
+expiration time.</li>
+<li><em>scope:</em> A list of oauth2app.models.AccessRange objects. <em>Default None</em></li>
+<li><em>refreshable:</em> A boolean that indicates whether this access token is
+refreshable. <em>Default False</em></li>
+</ul>
+<dl class="exception">
+<dt id="oauth2app.models.AccessToken.DoesNotExist">
+<em class="property">exception </em><tt class="descname">DoesNotExist</tt><a class="headerlink" href="#oauth2app.models.AccessToken.DoesNotExist" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="exception">
+<dt id="oauth2app.models.AccessToken.MultipleObjectsReturned">
+<em class="property">exception </em><tt class="descclassname">AccessToken.</tt><tt class="descname">MultipleObjectsReturned</tt><a class="headerlink" href="#oauth2app.models.AccessToken.MultipleObjectsReturned" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="oauth2app.models.AccessToken.client">
+<tt class="descclassname">AccessToken.</tt><tt class="descname">client</tt><a class="headerlink" href="#oauth2app.models.AccessToken.client" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="oauth2app.models.AccessToken.scope">
+<tt class="descclassname">AccessToken.</tt><tt class="descname">scope</tt><a class="headerlink" href="#oauth2app.models.AccessToken.scope" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="oauth2app.models.AccessToken.user">
+<tt class="descclassname">AccessToken.</tt><tt class="descname">user</tt><a class="headerlink" href="#oauth2app.models.AccessToken.user" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="oauth2app.models.Client">
+<em class="property">class </em><tt class="descclassname">oauth2app.models.</tt><tt class="descname">Client</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/oauth2app/models.html#Client"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.models.Client" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stores client authentication data.</p>
+<p><strong>Args:</strong></p>
+<ul>
+<li><p class="first"><em>name:</em> A string representing the client name.</p>
+</li>
+<li><dl class="first docutils">
+<dt><em>user:</em> A django.contrib.auth.models.User object representing the client</dt>
+<dd><p class="first last">owner.</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p><strong>Kwargs:</strong></p>
+<ul class="simple">
+<li><em>description:</em> A string representing the client description. 
+<em>Default None</em></li>
+<li><em>key:</em> A string representing the client key. <em>Default 30 character 
+random string</em></li>
+<li><em>secret:</em> A string representing the client secret. <em>Default 30 character
+random string</em></li>
+<li><em>redirect_uri:</em> A string representing the client redirect_uri. 
+<em>Default None</em></li>
+<li><em>authorized_reponse_types:</em> An integer representing the bit represented 
+authorized response types. Example: oauth2app.lib.response.TOKEN | 
+oauth2app.lib.response.CODE. <em>Default oauth2app.lib.response.CODE</em></li>
+</ul>
+<dl class="exception">
+<dt id="oauth2app.models.Client.DoesNotExist">
+<em class="property">exception </em><tt class="descname">DoesNotExist</tt><a class="headerlink" href="#oauth2app.models.Client.DoesNotExist" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="exception">
+<dt id="oauth2app.models.Client.MultipleObjectsReturned">
+<em class="property">exception </em><tt class="descclassname">Client.</tt><tt class="descname">MultipleObjectsReturned</tt><a class="headerlink" href="#oauth2app.models.Client.MultipleObjectsReturned" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="oauth2app.models.Client.accesstoken_set">
+<tt class="descclassname">Client.</tt><tt class="descname">accesstoken_set</tt><a class="headerlink" href="#oauth2app.models.Client.accesstoken_set" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="oauth2app.models.Client.code_set">
+<tt class="descclassname">Client.</tt><tt class="descname">code_set</tt><a class="headerlink" href="#oauth2app.models.Client.code_set" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="oauth2app.models.Client.user">
+<tt class="descclassname">Client.</tt><tt class="descname">user</tt><a class="headerlink" href="#oauth2app.models.Client.user" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="oauth2app.models.Code">
+<em class="property">class </em><tt class="descclassname">oauth2app.models.</tt><tt class="descname">Code</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/oauth2app/models.html#Code"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.models.Code" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stores authorization code data.</p>
+<p><strong>Args:</strong></p>
+<ul class="simple">
+<li><em>client:</em> A oauth2app.models.Client object</li>
+<li><em>user:</em> A django.contrib.auth.models.User object</li>
+</ul>
+<p><strong>Kwargs:</strong></p>
+<ul class="simple">
+<li><em>key:</em> A string representing the authorization code. <em>Default 30 
+character random string</em></li>
+<li><em>expire:</em> A positive integer timestamp representing the access token&#8217;s 
+expiration time.</li>
+<li><em>redirect_uri:</em> A string representing the redirect_uri provided by the 
+requesting client when the code was issued. <em>Default None</em></li>
+<li><em>scope:</em> A list of oauth2app.models.AccessRange objects. <em>Default None</em></li>
+</ul>
+<dl class="exception">
+<dt id="oauth2app.models.Code.DoesNotExist">
+<em class="property">exception </em><tt class="descname">DoesNotExist</tt><a class="headerlink" href="#oauth2app.models.Code.DoesNotExist" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="exception">
+<dt id="oauth2app.models.Code.MultipleObjectsReturned">
+<em class="property">exception </em><tt class="descclassname">Code.</tt><tt class="descname">MultipleObjectsReturned</tt><a class="headerlink" href="#oauth2app.models.Code.MultipleObjectsReturned" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="oauth2app.models.Code.client">
+<tt class="descclassname">Code.</tt><tt class="descname">client</tt><a class="headerlink" href="#oauth2app.models.Code.client" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="oauth2app.models.Code.scope">
+<tt class="descclassname">Code.</tt><tt class="descname">scope</tt><a class="headerlink" href="#oauth2app.models.Code.scope" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="oauth2app.models.Code.user">
+<tt class="descclassname">Code.</tt><tt class="descname">user</tt><a class="headerlink" href="#oauth2app.models.Code.user" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="oauth2app.models.KeyGenerator">
+<em class="property">class </em><tt class="descclassname">oauth2app.models.</tt><tt class="descname">KeyGenerator</tt><big>(</big><em>length</em><big>)</big><a class="reference internal" href="_modules/oauth2app/models.html#KeyGenerator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.models.KeyGenerator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callable Key Generator that returns a random keystring.</p>
+<p><strong>Args:</strong></p>
+<ul class="simple">
+<li><em>length:</em> A integer indicating how long the key should be.</li>
+</ul>
+<p><em>Returns str</em></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="oauth2app.models.TimestampGenerator">
+<em class="property">class </em><tt class="descclassname">oauth2app.models.</tt><tt class="descname">TimestampGenerator</tt><big>(</big><em>seconds=0</em><big>)</big><a class="reference internal" href="_modules/oauth2app/models.html#TimestampGenerator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.models.TimestampGenerator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callable Timestamp Generator that returns a UNIX time integer.</p>
+<p><strong>Kwargs:</strong></p>
+<ul class="simple">
+<li><em>seconds:</em> A integer indicating how many seconds in the future the
+timestamp should be. <em>Default 0</em></li>
+</ul>
+<p><em>Returns int</em></p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Models</a><ul>
+<li><a class="reference internal" href="#module-oauth2app.models">Module Reference</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="token.html"
+                        title="previous chapter">Access Token Generation</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="settings.html"
+                        title="next chapter">Settings</a></p>
+			<div id="searchbox" style="display: none">
+			  <h3>Quick search</h3>
+			    <form class="search" action="search.html" method="get">
+			      <input type="text" name="q" size="18" />
+			      <input type="image" class="image" src="_static/search.gif" />
+			      <input type="hidden" name="check_keywords" value="yes" />
+			      <input type="hidden" name="area" value="default" />
+			    </form>
+			    <p class="searchtip">
+			    Enter search terms or a module, class or function name.
+			    </p>
+			</div>
+		
+			<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+<div class="hd_bottom"></div>
+</div>
+
+	
+	<div id="footer">
+        <p>&copy; 2008-2011 HiiDef</p>
+    </div><!-- /footer -->
+  </body>
+</html>

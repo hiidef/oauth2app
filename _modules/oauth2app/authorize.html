@@ -1,0 +1,360 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>oauth2app.authorize &mdash; Django OAuth 2.0 Server App v0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="Django OAuth 2.0 Server App v0.1.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+	<div id="header">
+	     <h1 class="hd"><a href="http://hiidef.com/" onclick="return false" title="HiiDef Inc."><span class="hd_hidden">HiiDef Inc.</span></a></h1>
+	     <ul class="hd_topnav">
+			<li><a href="http://hiidef.com/products" title="Products">Products</a></li>
+	         <li><a href="http://hiidef.com/team" title="Team">Team</a></li>
+	         <li><a href="http://blog.hiidef.com" title="Blog">Blog</a></li>
+	         <li><a href="http://hiidef.com/jobs" title="Jobs">Jobs</a></li>
+			 <li><a href="http://hiidef.github.com/" title="Code">Code</a></li>
+	         <li class="contact"><a href="mailto:hello@hiidef.com">hello@hiidef.com</a></li>
+	     </ul>
+	     <div id="hero">
+	         <h2 class="hd">oauth2app.authorize</h2>
+	     </div>
+    <div class="hd_related">
+      <ul class="right">
+        <li style="margin-right: 10px">
+          &nbsp;<a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li >
+          &nbsp;<a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a>&nbsp; |&nbsp;</li>
+	  </ul>
+	  <ul>
+        <li>&nbsp;<a href="../../index.html">Django OAuth 2.0 Server App v0.1.0 documentation</a>&nbsp; &raquo;&nbsp;</li>
+          <li>&nbsp;<a href="../index.html" accesskey="U">Module code</a></li>
+      </ul>
+    </div>
+	 </div>
+	
+<div id="main">
+<div class="hd_top"></div>  
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for oauth2app.authorize</h1><div class="highlight"><pre>
+<span class="c">#-*- coding: utf-8 -*-</span>
+
+
+<span class="kn">from</span> <span class="nn">urllib</span> <span class="kn">import</span> <span class="n">urlencode</span>
+<span class="kn">from</span> <span class="nn">django.http</span> <span class="kn">import</span> <span class="n">absolute_http_url_re</span><span class="p">,</span> <span class="n">HttpResponseRedirect</span>
+<span class="kn">from</span> <span class="nn">.exceptions</span> <span class="kn">import</span> <span class="n">OAuth2Exception</span>
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">Client</span><span class="p">,</span> <span class="n">AccessRange</span><span class="p">,</span> <span class="n">Code</span><span class="p">,</span> <span class="n">AccessToken</span>
+<span class="kn">from</span> <span class="nn">.lib.response</span> <span class="kn">import</span> <span class="n">RESPONSE_TYPES</span><span class="p">,</span> <span class="n">TOKEN</span><span class="p">,</span> <span class="n">CODE</span><span class="p">,</span> <span class="n">CODE_AND_TOKEN</span>
+<span class="kn">from</span> <span class="nn">.lib.response</span> <span class="kn">import</span> <span class="n">is_valid_response_type</span>
+<span class="kn">from</span> <span class="nn">.consts</span> <span class="kn">import</span> <span class="n">ACCESS_TOKEN_EXPIRATION</span>
+<span class="kn">from</span> <span class="nn">.lib.uri</span> <span class="kn">import</span> <span class="n">add_parameters</span><span class="p">,</span> <span class="n">add_fragments</span><span class="p">,</span> <span class="n">normalize</span>
+
+
+<div class="viewcode-block" id="AuthorizationException"><a class="viewcode-back" href="../../authorize.html#oauth2app.authorize.AuthorizationException">[docs]</a><span class="k">class</span> <span class="nc">AuthorizationException</span><span class="p">(</span><span class="n">OAuth2Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Authorization exception base class.&quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+
+</div>
+<div class="viewcode-block" id="MissingRedirectURI"><a class="viewcode-back" href="../../authorize.html#oauth2app.authorize.MissingRedirectURI">[docs]</a><span class="k">class</span> <span class="nc">MissingRedirectURI</span><span class="p">(</span><span class="n">OAuth2Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Neither the request nor the client specify a redirect_url.&quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+
+</div>
+<div class="viewcode-block" id="UnauthenticatedUser"><a class="viewcode-back" href="../../authorize.html#oauth2app.authorize.UnauthenticatedUser">[docs]</a><span class="k">class</span> <span class="nc">UnauthenticatedUser</span><span class="p">(</span><span class="n">OAuth2Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The provided user is not internally authenticated, via </span>
+<span class="sd">    user.is_authenticated()&quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+
+</div>
+<div class="viewcode-block" id="UnvalidatedRequest"><a class="viewcode-back" href="../../authorize.html#oauth2app.authorize.UnvalidatedRequest">[docs]</a><span class="k">class</span> <span class="nc">UnvalidatedRequest</span><span class="p">(</span><span class="n">OAuth2Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The method requested requires a validated request to continue.&quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+    
+</div>
+<div class="viewcode-block" id="InvalidRequest"><a class="viewcode-back" href="../../authorize.html#oauth2app.authorize.InvalidRequest">[docs]</a><span class="k">class</span> <span class="nc">InvalidRequest</span><span class="p">(</span><span class="n">AuthorizationException</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The request is missing a required parameter, includes an</span>
+<span class="sd">    unsupported parameter or parameter value, or is otherwise</span>
+<span class="sd">    malformed.&quot;&quot;&quot;</span>
+    <span class="n">error</span> <span class="o">=</span> <span class="s">&#39;invalid_request&#39;</span>
+
+</div>
+<div class="viewcode-block" id="InvalidClient"><a class="viewcode-back" href="../../authorize.html#oauth2app.authorize.InvalidClient">[docs]</a><span class="k">class</span> <span class="nc">InvalidClient</span><span class="p">(</span><span class="n">AuthorizationException</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Client authentication failed (e.g. unknown client, no</span>
+<span class="sd">    client credentials included, multiple client credentials</span>
+<span class="sd">    included, or unsupported credentials type).&quot;&quot;&quot;</span>
+    <span class="n">error</span> <span class="o">=</span> <span class="s">&#39;invalid_client&#39;</span>
+
+</div>
+<div class="viewcode-block" id="UnauthorizedClient"><a class="viewcode-back" href="../../authorize.html#oauth2app.authorize.UnauthorizedClient">[docs]</a><span class="k">class</span> <span class="nc">UnauthorizedClient</span><span class="p">(</span><span class="n">AuthorizationException</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The client is not authorized to request an authorization</span>
+<span class="sd">    code using this method.&quot;&quot;&quot;</span>
+    <span class="n">error</span> <span class="o">=</span> <span class="s">&#39;unauthorized_client&#39;</span>
+
+</div>
+<div class="viewcode-block" id="AccessDenied"><a class="viewcode-back" href="../../authorize.html#oauth2app.authorize.AccessDenied">[docs]</a><span class="k">class</span> <span class="nc">AccessDenied</span><span class="p">(</span><span class="n">AuthorizationException</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The resource owner or authorization server denied the</span>
+<span class="sd">    request.&quot;&quot;&quot;</span>
+    <span class="n">error</span> <span class="o">=</span> <span class="s">&#39;access_denied&#39;</span>
+
+</div>
+<div class="viewcode-block" id="UnsupportedResponseType"><a class="viewcode-back" href="../../authorize.html#oauth2app.authorize.UnsupportedResponseType">[docs]</a><span class="k">class</span> <span class="nc">UnsupportedResponseType</span><span class="p">(</span><span class="n">AuthorizationException</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The authorization server does not support obtaining an</span>
+<span class="sd">    authorization code using this method.&quot;&quot;&quot;</span>
+    <span class="n">error</span> <span class="o">=</span> <span class="s">&#39;unsupported_response_type&#39;</span>
+
+</div>
+<div class="viewcode-block" id="InvalidScope"><a class="viewcode-back" href="../../authorize.html#oauth2app.authorize.InvalidScope">[docs]</a><span class="k">class</span> <span class="nc">InvalidScope</span><span class="p">(</span><span class="n">AuthorizationException</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The requested scope is invalid, unknown, or malformed.&quot;&quot;&quot;</span>
+    <span class="n">error</span> <span class="o">=</span> <span class="s">&#39;invalid_scope&#39;</span>
+
+    </div>
+<div class="viewcode-block" id="Authorizer"><a class="viewcode-back" href="../../authorize.html#oauth2app.authorize.Authorizer">[docs]</a><span class="k">class</span> <span class="nc">Authorizer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Access authorizer. Validates access credentials and generates</span>
+<span class="sd">    a response with an authorization code passed as a parameter to the</span>
+<span class="sd">    redirect URI, an access token passed as a URI fragment to the redirect</span>
+<span class="sd">    URI, or both.</span>
+
+<span class="sd">    **Args:**</span>
+
+<span class="sd">    * *request:* Django HttpRequest object.</span>
+
+<span class="sd">    **Kwargs:**</span>
+
+<span class="sd">    * *scopes:* A iterable of oauth2app.models.AccessRange objects.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">client</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">valid</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">error</span> <span class="o">=</span> <span class="bp">None</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">scope</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">scope</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">authorized_scope</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">scope</span><span class="p">,</span> <span class="n">AccessRange</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">authorized_scope</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">scope</span><span class="o">.</span><span class="n">key</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">authorized_scope</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">x</span><span class="o">.</span><span class="n">key</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">scope</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">response_type</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">REQUEST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;response_type&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client_id</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">REQUEST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;client_id&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">redirect_uri</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">REQUEST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;redirect_uri&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scope</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">REQUEST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;scope&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">REQUEST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;state&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">request</span> <span class="o">=</span> <span class="n">request</span>
+        
+<div class="viewcode-block" id="Authorizer.validate"><a class="viewcode-back" href="../../authorize.html#oauth2app.authorize.Authorizer.validate">[docs]</a>    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Validate the request. Raises an AuthorizationException if the </span>
+<span class="sd">        request fails authorization, or a MissingRedirectURI if no </span>
+<span class="sd">        redirect_uri is available.</span>
+<span class="sd">        </span>
+<span class="sd">        *Returns None*&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_validate</span><span class="p">()</span>
+        <span class="k">except</span> <span class="n">AuthorizationException</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_check_redirect_uri</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error</span> <span class="o">=</span> <span class="n">e</span>
+            <span class="k">raise</span> <span class="n">e</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid</span> <span class="o">=</span> <span class="bp">True</span>
+    </div>
+    <span class="k">def</span> <span class="nf">_validate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">client_id</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidRequest</span><span class="p">(</span><span class="s">&#39;No client_id&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span> 
+            <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">Client</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">client_id</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">Client</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidClient</span><span class="p">(</span><span class="s">&quot;client_id </span><span class="si">%s</span><span class="s"> doesn&#39;t exist&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">client_id</span><span class="p">)</span>
+        <span class="c"># Redirect URI</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">redirect_uri</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">redirect_uri</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">MissingRedirectURI</span><span class="p">(</span><span class="s">&quot;&quot;&quot;No redirect_uri </span>
+<span class="s">                    provided or registered.&quot;&quot;&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">redirect_uri</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">normalize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">redirect_uri</span><span class="p">)</span> <span class="o">!=</span> <span class="n">normalize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">redirect_uri</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">redirect_uri</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">redirect_uri</span>
+                <span class="k">raise</span> <span class="n">InvalidRequest</span><span class="p">(</span><span class="s">&quot;&quot;&quot;Registered redirect_uri doesn&#39;t</span>
+<span class="s">                    match provided redirect_uri.&quot;&quot;&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">redirect_uri</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">redirect_uri</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">redirect_uri</span>
+        <span class="c"># Check response type</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">response_type</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidRequest</span><span class="p">(</span><span class="s">&#39;response_type is a required parameter.&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">response_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">RESPONSE_TYPES</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidRequest</span><span class="p">(</span><span class="s">&quot;&quot;&quot;No such response </span>
+<span class="s">                type: </span><span class="si">%s</span><span class="s">&quot;&quot;&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">response_type</span><span class="p">)</span>
+        <span class="c"># Response type</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_valid_response_type</span><span class="p">(</span>
+                <span class="n">RESPONSE_TYPES</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">response_type</span><span class="p">],</span> 
+                <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">authorized_reponse_types</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">UnauthorizedClient</span><span class="p">(</span><span class="s">&quot;&quot;&quot;Response type </span><span class="si">%s</span><span class="s"> not allowed for</span>
+<span class="s">                client&quot;&quot;&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">response_type</span><span class="p">)</span>        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">absolute_http_url_re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">redirect_uri</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">InvalidRequest</span><span class="p">(</span><span class="s">&#39;Absolute URI required for redirect_uri&#39;</span><span class="p">)</span>
+        <span class="c"># Scope </span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">authorized_scope</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">scope</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">scope</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">authorized_scope</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scope</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">scopes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scope</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+            <span class="n">access_ranges</span> <span class="o">=</span> <span class="n">AccessRange</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">key__in</span><span class="o">=</span><span class="n">scopes</span><span class="p">)</span>
+            <span class="n">access_ranges</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">access_ranges</span><span class="o">.</span><span class="n">values_list</span><span class="p">(</span><span class="s">&#39;key&#39;</span><span class="p">,</span> <span class="n">flat</span><span class="o">=</span><span class="bp">True</span><span class="p">))</span>
+            <span class="n">difference</span> <span class="o">=</span> <span class="n">access_ranges</span><span class="o">.</span><span class="n">symmetric_difference</span><span class="p">(</span><span class="n">scopes</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">difference</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">InvalidScope</span><span class="p">(</span><span class="s">&quot;&quot;&quot;Following access ranges do not</span>
+<span class="s">                    exist: </span><span class="si">%s</span><span class="s">&quot;&quot;&quot;</span> <span class="o">%</span> <span class="s">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">difference</span><span class="p">))</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">authorized_scope</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">new_scope</span> <span class="o">=</span> <span class="n">scopes</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">authorized_scope</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_scope</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">InvalidScope</span><span class="p">(</span><span class="s">&quot;&quot;&quot;Invalid scope request: </span><span class="si">%s</span><span class="s">&quot;&quot;&quot;</span> <span class="o">%</span> <span class="nb">list</span><span class="p">(</span><span class="n">new_scope</span><span class="p">))</span>
+                    
+    <span class="k">def</span> <span class="nf">_check_redirect_uri</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Raise MissingRedirectURI if no redirect_uri is available.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">redirect_uri</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">MissingRedirectURI</span><span class="p">(</span><span class="s">&#39;No redirect_uri to send response.&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">absolute_http_url_re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">redirect_uri</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">MissingRedirectURI</span><span class="p">(</span><span class="s">&#39;Absolute redirect_uri required.&#39;</span><span class="p">)</span>
+    
+<div class="viewcode-block" id="Authorizer.error_redirect"><a class="viewcode-back" href="../../authorize.html#oauth2app.authorize.Authorizer.error_redirect">[docs]</a>    <span class="k">def</span> <span class="nf">error_redirect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;In the event of an error, return a Django HttpResponseRedirect</span>
+<span class="sd">        with the appropriate error parameters.</span>
+<span class="sd">        </span>
+<span class="sd">        Raises MissingRedirectURI if no redirect_uri is available.</span>
+<span class="sd">        </span>
+<span class="sd">        *Returns HttpResponseRedirect*&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_redirect_uri</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">error</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">e</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">error</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">e</span> <span class="o">=</span> <span class="n">AccessDenied</span><span class="p">(</span><span class="s">&quot;Access Denied.&quot;</span><span class="p">)</span>
+        <span class="n">qs</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;error&#39;</span><span class="p">:</span> <span class="n">e</span><span class="o">.</span><span class="n">error</span><span class="p">,</span> <span class="s">&#39;error_description&#39;</span><span class="p">:</span> <span class="s">u&#39;</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">e</span><span class="o">.</span><span class="n">message</span><span class="p">}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">qs</span><span class="p">[</span><span class="s">&#39;state&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span>
+        <span class="n">redirect_uri</span> <span class="o">=</span> <span class="n">add_parameters</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">redirect_uri</span><span class="p">,</span> <span class="n">qs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">HttpResponseRedirect</span><span class="p">(</span><span class="n">redirect_uri</span><span class="p">)</span>
+ </div>
+    <span class="k">def</span> <span class="nf">_query_string</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the a url encoded query string useful for resending request</span>
+<span class="sd">        parameters when a user authorizes the request via a form POST.</span>
+<span class="sd">        </span>
+<span class="sd">        Raises UnvalidatedRequest if the request has not been validated.</span>
+<span class="sd">        </span>
+<span class="sd">        *Returns str*&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">UnvalidatedRequest</span><span class="p">(</span><span class="s">&quot;&quot;&quot;This request is invalid or has not </span>
+<span class="s">                been validated.&quot;&quot;&quot;</span><span class="p">)</span>
+        <span class="n">parameters</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s">&quot;response_type&quot;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">response_type</span><span class="p">,</span>
+            <span class="s">&quot;client_id&quot;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">client_id</span><span class="p">}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">redirect_uri</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">parameters</span><span class="p">[</span><span class="s">&quot;redirect_uri&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">redirect_uri</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">parameters</span><span class="p">[</span><span class="s">&quot;state&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scope</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">parameters</span><span class="p">[</span><span class="s">&quot;scope&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scope</span>        
+        <span class="k">return</span> <span class="n">urlencode</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
+    
+    <span class="n">query_string</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_query_string</span><span class="p">)</span>
+    
+<div class="viewcode-block" id="Authorizer.grant_redirect"><a class="viewcode-back" href="../../authorize.html#oauth2app.authorize.Authorizer.grant_redirect">[docs]</a>    <span class="k">def</span> <span class="nf">grant_redirect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;On successful authorization of the request, return a Django </span>
+<span class="sd">        HttpResponseRedirect with the appropriate authorization code parameters</span>
+<span class="sd">        or access token URI fragments..</span>
+<span class="sd">        </span>
+<span class="sd">        Raises UnvalidatedRequest if the request has not been validated.</span>
+<span class="sd">        </span>
+<span class="sd">        *Returns HttpResponseRedirect*&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">UnvalidatedRequest</span><span class="p">(</span><span class="s">&quot;&quot;&quot;This request is invalid or has not </span>
+<span class="s">                been validated.&quot;&quot;&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">is_authenticated</span><span class="p">():</span>
+            <span class="n">qs</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">frag</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">response_type</span> <span class="o">=</span> <span class="n">RESPONSE_TYPES</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">response_type</span><span class="p">]</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scope</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">scopes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scope</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+                <span class="n">access_ranges</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">AccessRange</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">key__in</span><span class="o">=</span><span class="n">scopes</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">access_ranges</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">if</span> <span class="n">response_type</span> <span class="ow">in</span> <span class="p">[</span><span class="n">CODE</span><span class="p">,</span> <span class="n">CODE_AND_TOKEN</span><span class="p">]:</span>
+                <span class="n">code</span> <span class="o">=</span> <span class="n">Code</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+                    <span class="n">user</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="p">,</span> 
+                    <span class="n">client</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="p">,</span>
+                    <span class="n">redirect_uri</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">redirect_uri</span><span class="p">)</span>
+                <span class="n">code</span><span class="o">.</span><span class="n">scope</span> <span class="o">=</span> <span class="n">access_ranges</span>
+                <span class="n">code</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+                <span class="n">qs</span><span class="p">[</span><span class="s">&#39;code&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">code</span><span class="o">.</span><span class="n">key</span>
+            <span class="k">if</span> <span class="n">response_type</span> <span class="ow">in</span> <span class="p">[</span><span class="n">TOKEN</span><span class="p">,</span> <span class="n">CODE_AND_TOKEN</span><span class="p">]:</span>
+                <span class="n">access_token</span> <span class="o">=</span> <span class="n">AccessToken</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+                    <span class="n">user</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="p">,</span>
+                    <span class="n">client</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="p">)</span>
+                <span class="n">access_token</span><span class="o">.</span><span class="n">scope</span> <span class="o">=</span> <span class="n">access_ranges</span>
+                <span class="n">access_token</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+                <span class="n">frag</span><span class="p">[</span><span class="s">&#39;access_token&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">access_token</span><span class="o">.</span><span class="n">token</span>
+                <span class="n">frag</span><span class="p">[</span><span class="s">&#39;expires_in&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ACCESS_TOKEN_EXPIRATION</span>
+                <span class="n">frag</span><span class="p">[</span><span class="s">&#39;scope&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scope</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">qs</span><span class="p">[</span><span class="s">&#39;state&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span>
+            <span class="n">redirect_uri</span> <span class="o">=</span> <span class="n">add_parameters</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">redirect_uri</span><span class="p">,</span> <span class="n">qs</span><span class="p">)</span>
+            <span class="n">redirect_uri</span> <span class="o">=</span> <span class="n">add_fragments</span><span class="p">(</span><span class="n">redirect_uri</span><span class="p">,</span> <span class="n">frag</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">HttpResponseRedirect</span><span class="p">(</span><span class="n">redirect_uri</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">UnauthenticatedUser</span><span class="p">(</span><span class="s">&quot;&quot;&quot;Django user object associated with the</span>
+<span class="s">                request is not authenticated.&quot;&quot;&quot;</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+			<div id="searchbox" style="display: none">
+			  <h3>Quick search</h3>
+			    <form class="search" action="../../search.html" method="get">
+			      <input type="text" name="q" size="18" />
+			      <input type="image" class="image" src="../../_static/search.gif" />
+			      <input type="hidden" name="check_keywords" value="yes" />
+			      <input type="hidden" name="area" value="default" />
+			    </form>
+			    <p class="searchtip">
+			    Enter search terms or a module, class or function name.
+			    </p>
+			</div>
+		
+			<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+<div class="hd_bottom"></div>
+</div>
+
+	
+	<div id="footer">
+        <p>&copy; 2008-2011 HiiDef</p>
+    </div><!-- /footer -->
+  </body>
+</html>

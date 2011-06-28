@@ -1,0 +1,443 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>oauth2app.token &mdash; Django OAuth 2.0 Server App v0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="Django OAuth 2.0 Server App v0.1.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+	<div id="header">
+	     <h1 class="hd"><a href="http://hiidef.com/" onclick="return false" title="HiiDef Inc."><span class="hd_hidden">HiiDef Inc.</span></a></h1>
+	     <ul class="hd_topnav">
+			<li><a href="http://hiidef.com/products" title="Products">Products</a></li>
+	         <li><a href="http://hiidef.com/team" title="Team">Team</a></li>
+	         <li><a href="http://blog.hiidef.com" title="Blog">Blog</a></li>
+	         <li><a href="http://hiidef.com/jobs" title="Jobs">Jobs</a></li>
+			 <li><a href="http://hiidef.github.com/" title="Code">Code</a></li>
+	         <li class="contact"><a href="mailto:hello@hiidef.com">hello@hiidef.com</a></li>
+	     </ul>
+	     <div id="hero">
+	         <h2 class="hd">oauth2app.token</h2>
+	     </div>
+    <div class="hd_related">
+      <ul class="right">
+        <li style="margin-right: 10px">
+          &nbsp;<a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li >
+          &nbsp;<a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a>&nbsp; |&nbsp;</li>
+	  </ul>
+	  <ul>
+        <li>&nbsp;<a href="../../index.html">Django OAuth 2.0 Server App v0.1.0 documentation</a>&nbsp; &raquo;&nbsp;</li>
+          <li>&nbsp;<a href="../index.html" accesskey="U">Module code</a></li>
+      </ul>
+    </div>
+	 </div>
+	
+<div id="main">
+<div class="hd_top"></div>  
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for oauth2app.token</h1><div class="highlight"><pre>
+<span class="c">#-*- coding: utf-8 -*-</span>
+
+
+<span class="kn">from</span> <span class="nn">base64</span> <span class="kn">import</span> <span class="n">b64encode</span><span class="p">,</span> <span class="n">b64decode</span>
+<span class="kn">from</span> <span class="nn">django.http</span> <span class="kn">import</span> <span class="n">HttpResponseBadRequest</span><span class="p">,</span> <span class="n">HttpResponse</span>
+<span class="kn">from</span> <span class="nn">django.contrib</span> <span class="kn">import</span> <span class="n">auth</span>
+<span class="kn">from</span> <span class="nn">django.contrib.auth</span> <span class="kn">import</span> <span class="n">authenticate</span>
+<span class="kn">from</span> <span class="nn">django.views.decorators.csrf</span> <span class="kn">import</span> <span class="n">csrf_exempt</span>
+<span class="kn">from</span> <span class="nn">simplejson</span> <span class="kn">import</span> <span class="n">dumps</span>
+<span class="kn">from</span> <span class="nn">.exceptions</span> <span class="kn">import</span> <span class="n">OAuth2Exception</span>
+<span class="kn">from</span> <span class="nn">.consts</span> <span class="kn">import</span> <span class="n">ACCESS_TOKEN_EXPIRATION</span><span class="p">,</span> <span class="n">REFRESH_TOKEN_LENGTH</span><span class="p">,</span> <span class="n">MAC_KEY</span>
+<span class="kn">from</span> <span class="nn">.lib.uri</span> <span class="kn">import</span> <span class="n">normalize</span>
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">Client</span><span class="p">,</span> <span class="n">AccessRange</span><span class="p">,</span> <span class="n">Code</span><span class="p">,</span> <span class="n">AccessToken</span><span class="p">,</span> <span class="n">TimestampGenerator</span><span class="p">,</span> <span class="n">KeyGenerator</span>
+
+
+<div class="viewcode-block" id="AccessTokenException"><a class="viewcode-back" href="../../token.html#oauth2app.token.AccessTokenException">[docs]</a><span class="k">class</span> <span class="nc">AccessTokenException</span><span class="p">(</span><span class="n">OAuth2Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Access Token exception base class.&quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+
+</div>
+<div class="viewcode-block" id="UnvalidatedRequest"><a class="viewcode-back" href="../../token.html#oauth2app.token.UnvalidatedRequest">[docs]</a><span class="k">class</span> <span class="nc">UnvalidatedRequest</span><span class="p">(</span><span class="n">OAuth2Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The method requested requires a validated request to continue.&quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+
+</div>
+<div class="viewcode-block" id="InvalidRequest"><a class="viewcode-back" href="../../token.html#oauth2app.token.InvalidRequest">[docs]</a><span class="k">class</span> <span class="nc">InvalidRequest</span><span class="p">(</span><span class="n">AccessTokenException</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The request is missing a required parameter, includes an</span>
+<span class="sd">    unsupported parameter or parameter value, repeats a</span>
+<span class="sd">    parameter, includes multiple credentials, utilizes more</span>
+<span class="sd">    than one mechanism for authenticating the client, or is</span>
+<span class="sd">    otherwise malformed.&quot;&quot;&quot;</span>
+    <span class="n">error</span> <span class="o">=</span> <span class="s">&#39;invalid_request&#39;</span>
+
+</div>
+<div class="viewcode-block" id="InvalidClient"><a class="viewcode-back" href="../../token.html#oauth2app.token.InvalidClient">[docs]</a><span class="k">class</span> <span class="nc">InvalidClient</span><span class="p">(</span><span class="n">AccessTokenException</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Client authentication failed (e.g. unknown client, no</span>
+<span class="sd">    client credentials included, multiple client credentials</span>
+<span class="sd">    included, or unsupported credentials type).&quot;&quot;&quot;</span>
+    <span class="n">error</span> <span class="o">=</span> <span class="s">&#39;invalid_client&#39;</span>
+
+</div>
+<div class="viewcode-block" id="UnauthorizedClient"><a class="viewcode-back" href="../../token.html#oauth2app.token.UnauthorizedClient">[docs]</a><span class="k">class</span> <span class="nc">UnauthorizedClient</span><span class="p">(</span><span class="n">AccessTokenException</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The client is not authorized to request an authorization</span>
+<span class="sd">    code using this method.&quot;&quot;&quot;</span>
+    <span class="n">error</span> <span class="o">=</span> <span class="s">&#39;unauthorized_client&#39;</span>
+
+         </div>
+<div class="viewcode-block" id="InvalidGrant"><a class="viewcode-back" href="../../token.html#oauth2app.token.InvalidGrant">[docs]</a><span class="k">class</span> <span class="nc">InvalidGrant</span><span class="p">(</span><span class="n">AccessTokenException</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The provided authorization grant is invalid, expired,</span>
+<span class="sd">    revoked, does not match the redirection URI used in the</span>
+<span class="sd">    authorization request, or was issued to another client.&quot;&quot;&quot;</span>
+    <span class="n">error</span> <span class="o">=</span> <span class="s">&#39;invalid_grant&#39;</span>
+
+</div>
+<div class="viewcode-block" id="UnsupportedGrantType"><a class="viewcode-back" href="../../token.html#oauth2app.token.UnsupportedGrantType">[docs]</a><span class="k">class</span> <span class="nc">UnsupportedGrantType</span><span class="p">(</span><span class="n">AccessTokenException</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The authorization grant type is not supported by the</span>
+<span class="sd">    authorization server.&quot;&quot;&quot;</span>
+    <span class="n">error</span> <span class="o">=</span> <span class="s">&#39;unsupported_grant_type&#39;</span>
+
+</div>
+<div class="viewcode-block" id="InvalidScope"><a class="viewcode-back" href="../../token.html#oauth2app.token.InvalidScope">[docs]</a><span class="k">class</span> <span class="nc">InvalidScope</span><span class="p">(</span><span class="n">AccessTokenException</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The requested scope is invalid, unknown, malformed, or</span>
+<span class="sd">    exceeds the scope granted by the resource owner.&quot;&quot;&quot;</span>
+    <span class="n">error</span> <span class="o">=</span> <span class="s">&#39;invalid_scope&#39;</span>
+
+</div>
+<span class="nd">@csrf_exempt</span>
+<div class="viewcode-block" id="handler"><a class="viewcode-back" href="../../token.html#oauth2app.token.handler">[docs]</a><span class="k">def</span> <span class="nf">handler</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Django view that handles the token endpoint. Returns a JSON formatted </span>
+<span class="sd">    authorization code.</span>
+<span class="sd">    </span>
+<span class="sd">    **Args:**</span>
+
+<span class="sd">    * *request:* Django HttpRequest object.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">token_generator</span> <span class="o">=</span> <span class="n">TokenGenerator</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">token_generator</span><span class="o">.</span><span class="n">validate</span><span class="p">()</span>
+    <span class="k">except</span> <span class="n">AccessTokenException</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">token_generator</span><span class="o">.</span><span class="n">error_response</span><span class="p">()</span> 
+    <span class="k">return</span> <span class="n">token_generator</span><span class="o">.</span><span class="n">grant_response</span><span class="p">()</span>
+
+</div>
+<div class="viewcode-block" id="TokenGenerator"><a class="viewcode-back" href="../../token.html#oauth2app.token.TokenGenerator">[docs]</a><span class="k">class</span> <span class="nc">TokenGenerator</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Token access handler. Validates authorization codes, refresh tokens,</span>
+<span class="sd">    username/password pairs, and generates a JSON formatted authorization code.</span>
+
+<span class="sd">    **Args:**</span>
+
+<span class="sd">    * *request:* Django HttpRequest object.&quot;&quot;&quot;</span>
+    
+    <span class="n">valid</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">code</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">client</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">access_token</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">user</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">error</span> <span class="o">=</span> <span class="bp">None</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">scope</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">scope</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">authorized_scope</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">scope</span><span class="p">,</span> <span class="n">AccessRange</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">authorized_scope</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">scope</span><span class="o">.</span><span class="n">key</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">authorized_scope</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">x</span><span class="o">.</span><span class="n">key</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">scope</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">grant_type</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">REQUEST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;grant_type&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client_id</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">REQUEST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;client_id&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client_secret</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;client_secret&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scope</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">REQUEST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;scope&#39;</span><span class="p">)</span>
+        <span class="c"># authorization_code, see 4.1.3.  Access Token Request</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">code_key</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">REQUEST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;code&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">redirect_uri</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">REQUEST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;redirect_uri&#39;</span><span class="p">)</span>
+        <span class="c"># refresh_token, see 6.  Refreshing an Access Token</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh_token</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">REQUEST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;refresh_token&#39;</span><span class="p">)</span>
+        <span class="c"># password, see 4.3.2. Access Token Request</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">username</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">REQUEST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;username&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">password</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">REQUEST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;password&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callback</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">REQUEST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;callback&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">request</span> <span class="o">=</span> <span class="n">request</span>
+        
+<div class="viewcode-block" id="TokenGenerator.validate"><a class="viewcode-back" href="../../token.html#oauth2app.token.TokenGenerator.validate">[docs]</a>    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Validate the request. Raises an AccessTokenException if the </span>
+<span class="sd">        request fails authorization.</span>
+<span class="sd">        </span>
+<span class="sd">        *Returns None*&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_validate</span><span class="p">()</span>
+        <span class="k">except</span> <span class="n">AccessTokenException</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error</span> <span class="o">=</span> <span class="n">e</span>
+            <span class="k">raise</span> <span class="n">e</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid</span> <span class="o">=</span> <span class="bp">True</span>
+        </div>
+    <span class="k">def</span> <span class="nf">_validate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c"># Check response type</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">grant_type</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidRequest</span><span class="p">(</span><span class="s">&#39;No grant_type provided.&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">grant_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span>
+                <span class="s">&quot;authorization_code&quot;</span><span class="p">,</span> 
+                <span class="s">&quot;refresh_token&quot;</span><span class="p">,</span>  
+                <span class="s">&quot;password&quot;</span><span class="p">,</span>
+                <span class="s">&quot;client_credentials&quot;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">UnsupportedGrantType</span><span class="p">(</span><span class="s">&#39;No such grant type: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">grant_type</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">client_id</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidRequest</span><span class="p">(</span><span class="s">&#39;No client_id&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span> 
+            <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">Client</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">client_id</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">Client</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidClient</span><span class="p">(</span><span class="s">&quot;client_id </span><span class="si">%s</span><span class="s"> doesn&#39;t exist&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">client_id</span><span class="p">)</span>
+        <span class="c"># Scope </span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scope</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">scopes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scope</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+            <span class="n">access_ranges</span> <span class="o">=</span> <span class="n">AccessRange</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">key__in</span><span class="o">=</span><span class="n">scopes</span><span class="p">)</span>
+            <span class="n">access_ranges</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">access_ranges</span><span class="o">.</span><span class="n">values_list</span><span class="p">(</span><span class="s">&#39;key&#39;</span><span class="p">,</span> <span class="n">flat</span><span class="o">=</span><span class="bp">True</span><span class="p">))</span>
+            <span class="n">difference</span> <span class="o">=</span> <span class="n">access_ranges</span><span class="o">.</span><span class="n">symmetric_difference</span><span class="p">(</span><span class="n">scopes</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">difference</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">InvalidScope</span><span class="p">(</span><span class="s">&quot;Following access ranges doesn&#39;t exist: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="s">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">difference</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">grant_type</span> <span class="o">==</span> <span class="s">&quot;authorization_code&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_validate_authorization_code</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">grant_type</span> <span class="o">==</span> <span class="s">&quot;refresh_token&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_validate_refresh_token</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">grant_type</span> <span class="o">==</span> <span class="s">&quot;password&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_validate_password</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">grant_type</span> <span class="o">==</span> <span class="s">&quot;client_credentials&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_validate_client_credentials</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">UnsupportedGrantType</span><span class="p">(</span><span class="s">&#39;Unable to validate grant type.&#39;</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="nf">_validate_access_credentials</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Validate the request&#39;s access credentials.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">client_secret</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">and</span> <span class="s">&quot;HTTP_AUTHORIZATION&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">META</span><span class="p">:</span>
+            <span class="n">auth</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">META</span><span class="p">[</span><span class="s">&quot;HTTP_AUTHORIZATION&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">auth</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s">&quot;basic&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">value</span> <span class="o">!=</span> <span class="n">b64encode</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s">:</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">secret</span><span class="p">)):</span>
+                    <span class="k">raise</span> <span class="n">InvalidClient</span><span class="p">(</span><span class="s">&#39;Client authentication failed.&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">InvalidClient</span><span class="p">(</span><span class="s">&#39;Client authentication failed.&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">client_secret</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">secret</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidClient</span><span class="p">(</span><span class="s">&#39;Client authentication failed.&#39;</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="nf">_validate_client_credentials</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Validate a client_credentials request.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validate_access_credentials</span><span class="p">()</span> 
+        
+    <span class="k">def</span> <span class="nf">_validate_authorization_code</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Validate an authorization_code request.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">code_key</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidRequest</span><span class="p">(</span><span class="s">&#39;No code_key provided&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validate_access_credentials</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span> 
+            <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="o">=</span> <span class="n">Code</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">code_key</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">Code</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidRequest</span><span class="p">(</span><span class="s">&#39;No such code: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">code_key</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scope</span> <span class="o">=</span> <span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">x</span><span class="o">.</span><span class="n">key</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">code</span><span class="o">.</span><span class="n">scope</span><span class="o">.</span><span class="n">all</span><span class="p">()])</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">redirect_uri</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidRequest</span><span class="p">(</span><span class="s">&#39;No redirect_uri&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">normalize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">redirect_uri</span><span class="p">)</span> <span class="o">!=</span> <span class="n">normalize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">code</span><span class="o">.</span><span class="n">redirect_uri</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">InvalidRequest</span><span class="p">(</span><span class="s">&quot;redirect_uri doesn&#39;t match&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_validate_password</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Validate a password request.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">username</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidRequest</span><span class="p">(</span><span class="s">&#39;No username&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">password</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidRequest</span><span class="p">(</span><span class="s">&#39;No password&#39;</span><span class="p">)</span>  
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scope</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">scopes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scope</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+            <span class="n">access_ranges</span> <span class="o">=</span> <span class="n">AccessRange</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">key__in</span><span class="o">=</span><span class="n">scopes</span><span class="p">)</span>
+            <span class="n">access_ranges</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">access_ranges</span><span class="o">.</span><span class="n">values_list</span><span class="p">(</span><span class="s">&#39;key&#39;</span><span class="p">,</span> <span class="n">flat</span><span class="o">=</span><span class="bp">True</span><span class="p">))</span>
+            <span class="n">difference</span> <span class="o">=</span> <span class="n">access_ranges</span><span class="o">.</span><span class="n">symmetric_difference</span><span class="p">(</span><span class="n">scopes</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">difference</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">InvalidScope</span><span class="p">(</span><span class="s">&quot;&quot;&quot;Following access ranges do not</span>
+<span class="s">                    exist: </span><span class="si">%s</span><span class="s">&quot;&quot;&quot;</span> <span class="o">%</span> <span class="s">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">difference</span><span class="p">))</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">authorized_scope</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">new_scope</span> <span class="o">=</span> <span class="n">scopes</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">authorized_scope</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_scope</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">InvalidScope</span><span class="p">(</span><span class="s">&quot;&quot;&quot;Invalid scope request: </span><span class="si">%s</span><span class="s">&quot;&quot;&quot;</span> <span class="o">%</span> <span class="nb">list</span><span class="p">(</span><span class="n">new_scope</span><span class="p">))</span>
+        <span class="k">if</span> <span class="s">&quot;HTTP_AUTHORIZATION&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">META</span><span class="p">:</span>
+            <span class="n">auth</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">META</span><span class="p">[</span><span class="s">&quot;HTTP_AUTHORIZATION&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">auth</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s">&quot;basic&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">value</span> <span class="o">!=</span> <span class="n">b64encode</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s">:</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">secret</span><span class="p">)):</span>
+                    <span class="k">raise</span> <span class="n">InvalidClient</span><span class="p">(</span><span class="s">&#39;Client authentication failed.&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">InvalidClient</span><span class="p">(</span><span class="s">&#39;Client authentication failed.&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidClient</span><span class="p">(</span><span class="s">&#39;Client authentication failed.&#39;</span><span class="p">)</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">authenticate</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">password</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">user</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span><span class="o">.</span><span class="n">is_active</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">InvalidRequest</span><span class="p">(</span><span class="s">&#39;Inactive user.&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidRequest</span><span class="p">(</span><span class="s">&#39;User authentication failed.&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user</span> <span class="o">=</span> <span class="n">user</span>
+        
+    <span class="k">def</span> <span class="nf">_validate_refresh_token</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Validate a refresh token request.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">refresh_token</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidRequest</span><span class="p">(</span><span class="s">&#39;No refresh_token&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span> 
+            <span class="bp">self</span><span class="o">.</span><span class="n">access_token</span> <span class="o">=</span> <span class="n">AccessToken</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">refresh_token</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">refresh_token</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">AccessToken</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidRequest</span><span class="p">(</span><span class="s">&#39;No such refresh token: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">refresh_token</span><span class="p">)</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validate_access_credentials</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scope</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">access_ranges</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">x</span><span class="o">.</span><span class="n">key</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">access_token</span><span class="o">.</span><span class="n">scope</span><span class="o">.</span><span class="n">all</span><span class="p">()])</span>
+            <span class="n">scopes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scope</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+            <span class="n">new_scope</span> <span class="o">=</span> <span class="n">scopes</span> <span class="o">-</span> <span class="n">access_ranges</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_scope</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">InvalidScope</span><span class="p">(</span><span class="s">&quot;&quot;&quot;Refresh request requested scopes beyond</span>
+<span class="s">                initial grant: </span><span class="si">%s</span><span class="s">&quot;&quot;&quot;</span> <span class="o">%</span> <span class="n">new_scope</span><span class="p">)</span>
+    
+<div class="viewcode-block" id="TokenGenerator.error_response"><a class="viewcode-back" href="../../token.html#oauth2app.token.TokenGenerator.error_response">[docs]</a>    <span class="k">def</span> <span class="nf">error_response</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;In the event of an error, return a Django HttpResponseBadRequest</span>
+<span class="sd">        with the appropriate JSON encoded error parameters.</span>
+<span class="sd">             </span>
+<span class="sd">        *Returns HttpResponseBadRequest*&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">error</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">e</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">error</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">e</span> <span class="o">=</span> <span class="n">InvalidRequest</span><span class="p">(</span><span class="s">&quot;Access Denied.&quot;</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;error&#39;</span><span class="p">:</span> <span class="n">e</span><span class="o">.</span><span class="n">error</span><span class="p">,</span> <span class="s">&#39;error_description&#39;</span><span class="p">:</span> <span class="s">u&#39;</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">e</span><span class="o">.</span><span class="n">message</span><span class="p">}</span>
+        <span class="n">json_data</span> <span class="o">=</span> <span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">callback</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">json_data</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">(</span><span class="si">%s</span><span class="s">);&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">callback</span><span class="p">,</span> <span class="n">json_data</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span>    
+                <span class="n">content</span><span class="o">=</span><span class="n">json_data</span><span class="p">,</span> 
+                <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;application/json&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">HttpResponseBadRequest</span><span class="p">(</span>    
+                <span class="n">content</span><span class="o">=</span><span class="n">json_data</span><span class="p">,</span> 
+                <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;application/json&#39;</span><span class="p">)</span>   
+                 </div>
+<div class="viewcode-block" id="TokenGenerator.grant_response"><a class="viewcode-back" href="../../token.html#oauth2app.token.TokenGenerator.grant_response">[docs]</a>    <span class="k">def</span> <span class="nf">grant_response</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a JSON formatted authorization code.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">UnvalidatedRequest</span><span class="p">(</span><span class="s">&quot;This request is invalid or has not been validated.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">grant_type</span> <span class="o">==</span> <span class="s">&quot;authorization_code&quot;</span><span class="p">:</span>
+            <span class="n">access_token</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_authorization_code_token</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">grant_type</span> <span class="o">==</span> <span class="s">&quot;refresh_token&quot;</span><span class="p">:</span>
+            <span class="n">access_token</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_refresh_token</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">grant_type</span> <span class="o">==</span> <span class="s">&quot;password&quot;</span><span class="p">:</span>
+            <span class="n">access_token</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_password_token</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">grant_type</span> <span class="o">==</span> <span class="s">&quot;client_credentials&quot;</span><span class="p">:</span>
+            <span class="n">access_token</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_client_credentials_token</span><span class="p">()</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s">&#39;access_token&#39;</span><span class="p">:</span> <span class="n">access_token</span><span class="o">.</span><span class="n">token</span><span class="p">,</span>
+            <span class="s">&#39;expire_in&#39;</span><span class="p">:</span> <span class="n">ACCESS_TOKEN_EXPIRATION</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">MAC_KEY</span><span class="p">:</span>
+            <span class="n">data</span><span class="p">[</span><span class="s">&quot;mac_key&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;hmac-sha-256&quot;</span>
+            <span class="n">data</span><span class="p">[</span><span class="s">&quot;mac_algorithm&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;hmac-sha-256&quot;</span>
+        <span class="k">if</span> <span class="n">access_token</span><span class="o">.</span><span class="n">refreshable</span><span class="p">:</span>
+            <span class="n">data</span><span class="p">[</span><span class="s">&#39;refresh_token&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">access_token</span><span class="o">.</span><span class="n">refresh_token</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scope</span><span class="p">:</span>
+            <span class="n">data</span><span class="p">[</span><span class="s">&#39;scope&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scope</span><span class="p">)</span>
+        <span class="n">json_data</span> <span class="o">=</span> <span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">callback</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">json_data</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">(</span><span class="si">%s</span><span class="s">);&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">callback</span><span class="p">,</span> <span class="n">json_data</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">HttpResponse</span><span class="p">(</span>
+            <span class="n">content</span><span class="o">=</span><span class="n">json_data</span><span class="p">,</span> 
+            <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;application/json&#39;</span><span class="p">)</span>
+        <span class="n">response</span><span class="p">[</span><span class="s">&#39;Cache-Control&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;no-store&#39;</span>
+        <span class="k">return</span> <span class="n">response</span>
+</div>
+    <span class="k">def</span> <span class="nf">_get_authorization_code_token</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">access_token</span> <span class="o">=</span> <span class="n">AccessToken</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+            <span class="n">user</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">code</span><span class="o">.</span><span class="n">user</span><span class="p">,</span>
+            <span class="n">client</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="p">)</span>
+        <span class="n">scopes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scope</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="n">access_ranges</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">AccessRange</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">key__in</span><span class="o">=</span><span class="n">scopes</span><span class="p">))</span>
+        <span class="n">access_token</span><span class="o">.</span><span class="n">scope</span> <span class="o">=</span> <span class="n">access_ranges</span>
+        <span class="n">access_token</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">code</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">access_token</span>
+        
+    <span class="k">def</span> <span class="nf">_get_password_token</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">access_token</span> <span class="o">=</span> <span class="n">AccessToken</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+            <span class="n">user</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="p">,</span>
+            <span class="n">client</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="p">)</span>
+        <span class="n">scopes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scope</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="n">access_ranges</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">AccessRange</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">key__in</span><span class="o">=</span><span class="n">scopes</span><span class="p">))</span>
+        <span class="n">access_token</span><span class="o">.</span><span class="n">scope</span> <span class="o">=</span> <span class="n">access_ranges</span>
+        <span class="n">access_token</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">access_token</span>
+        
+    <span class="k">def</span> <span class="nf">_get_refresh_token</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">access_token</span><span class="o">.</span><span class="n">refresh_token</span> <span class="o">=</span> <span class="n">KeyGenerator</span><span class="p">(</span><span class="n">REFRESH_TOKEN_LENGTH</span><span class="p">)()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">access_token</span><span class="o">.</span><span class="n">expire</span> <span class="o">=</span> <span class="n">TimestampGenerator</span><span class="p">(</span><span class="n">ACCESS_TOKEN_EXPIRATION</span><span class="p">)()</span>
+        <span class="n">scopes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scope</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="n">access_ranges</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">AccessRange</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">key__in</span><span class="o">=</span><span class="n">scopes</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">access_token</span><span class="o">.</span><span class="n">scope</span> <span class="o">=</span> <span class="n">access_ranges</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">access_token</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">access_token</span>
+    
+    <span class="k">def</span> <span class="nf">_get_client_credentials_token</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">access_token</span> <span class="o">=</span> <span class="n">AccessToken</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+            <span class="n">user</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">user</span><span class="p">,</span>
+            <span class="n">client</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="p">,</span>
+            <span class="n">scope</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scope</span><span class="p">)</span>     
+        <span class="n">scopes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scope</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="n">access_ranges</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">AccessRange</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">key__in</span><span class="o">=</span><span class="n">scopes</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">access_token</span><span class="o">.</span><span class="n">scope</span> <span class="o">=</span> <span class="n">access_ranges</span>   
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">access_token</span>
+</pre></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+			<div id="searchbox" style="display: none">
+			  <h3>Quick search</h3>
+			    <form class="search" action="../../search.html" method="get">
+			      <input type="text" name="q" size="18" />
+			      <input type="image" class="image" src="../../_static/search.gif" />
+			      <input type="hidden" name="check_keywords" value="yes" />
+			      <input type="hidden" name="area" value="default" />
+			    </form>
+			    <p class="searchtip">
+			    Enter search terms or a module, class or function name.
+			    </p>
+			</div>
+		
+			<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+<div class="hd_bottom"></div>
+</div>
+
+	
+	<div id="footer">
+        <p>&copy; 2008-2011 HiiDef</p>
+    </div><!-- /footer -->
+  </body>
+</html>
