@@ -1,0 +1,110 @@
+{% extends "layout.html" %}
+{% load uni_form_tags %}
+
+{% block title %}{{ client.name }}{% endblock %}
+
+{% block content %}
+
+<h1>{{ client.name }}</h1>
+
+{% if error_description %}
+<div class="error_container">
+	<p>{{ error_description }}</p>
+</div>
+{% endif %}
+
+<div class="content_container">	
+	{% if access_tokens %}
+	<p>This client has been issued the following access tokens. Click the refresh token button to make a refresh request.</p>
+	<table class="data">
+			<tr>
+				<th>Token</th>
+				<th>Refresh Token</th>
+				<th>Expire</th>
+				<th>Scope</th>
+				<th>Refreshable</th>
+			</tr>
+		{% for token in access_tokens %}
+			<tr>
+				<td>{{ token.token }}</td>
+				<td>
+					<form method="post" action="/oauth2/token" class="authenticate">
+						<input type="hidden" name="grant_type" value="refresh_token" />
+						<input type="hidden" name="refresh_token" value="{{ token.refresh_token }}" />
+						<input type="hidden" name="client_id" value="{{ token.client.key }}" />
+						<input type="hidden" name="scope" value="{% for access_range in token.scope.all %}{{ access_range.key }} {% endfor %}" />
+						<input type="submit" value="{{ token.refresh_token }}"/>
+					</form>
+				</td>
+				<td>{{ token.expire }}</td>
+				<td>
+					{% for access_range in token.scope.all %}
+						{{ access_range.key }}
+					{% endfor %}
+				</td>
+				<td>{{ token.refreshable }}</td>
+			</tr>		
+		{% endfor %}
+	</table>
+	{% else %}
+	<p>This client has no access tokens.</p>
+	{% endif %}
+	
+	{% if codes %}
+	<p>This client has been issued the following authorization code. Click the authorize code button to make an authorization request.</p>
+	<table class="data">
+			<tr>
+				<th>Key</th>
+				<th>Expire</th>
+				<th>Scope</th>
+			</tr>
+		{% for code in codes %}
+			<tr>
+				<td>
+					<form method="post" action="/oauth2/token" class="authenticate">
+						<input type="hidden" name="grant_type" value="authorization_code" />
+						<input type="hidden" name="code" value="{{ code.key }}" />
+						<input type="hidden" name="redirect_uri" value="{{ code.redirect_uri }}" />
+						<input type="hidden" name="client_id" value="{{ code.client.key }}" />
+						<input type="submit" value="{{ code.key }}"/>
+					</form>
+				</td>
+				<td>{{ code.expire }}</td>
+				<td>
+					{% for access_range in code.scope.all %}
+						{{ access_range.key }}
+					{% endfor %}
+				</td>
+			</tr>		
+		{% endfor %}
+	</table>
+	{% else %}
+	<p>This client has no authorization codes.</p>
+	{% endif %}
+	
+	<script type="text/javascript">
+		$(document).ready(function(){
+			$('form.authenticate').submit(function(e){
+				e.preventDefault();
+				var values = {};
+				$.each($(this).serializeArray(), function(i, field) {
+				    values[field.name] = field.value;
+				});
+				$.ajax({
+					url: this.action,
+					data: values,
+					dataType: "jsonp",
+					beforeSend: function(xhr){
+					    xhr.setRequestHeader("Authorization", "{{basic_auth}}")
+					},
+					success: function(data) {window.location.reload();}
+				});
+			});
+		});
+	</script>
+
+</div>
+
+	
+
+{% endblock %}

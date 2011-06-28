@@ -1,27 +1,27 @@
-Django OAuth 2.0 App documentation
-==================================
+Django OAuth 2.0 Server App
+===========================
 
-
-Settings:
+Usage
+-----
 
 .. toctree::
    :maxdepth: 2
    
    settings
 
-Modules:
-
+Module Reference
+----------------
 
 .. toctree::
    :maxdepth: 2
    
-   authenticate
-   authorize
-   token
-	
-Indices and tables
-==================
+   
+   Client Authentication <authenticate>
+   Client Authorization <authorize>
+   Data Models <models>
+   Access Token Generation <token>
 
-* :ref:`genindex`
-* :ref:`search`
+About
+-----
 
+.. include:: ../README.rst

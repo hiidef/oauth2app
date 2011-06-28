@@ -1,0 +1,54 @@
+{% extends "layout.html" %}
+{% load uni_form_tags %}
+
+{% block title %}Your Clients{% endblock %}
+
+{% block content %}
+
+	<h1>Your Clients</h1>
+
+	<div class="content_container">
+	{% if clients %}
+	<table class="data">
+			<tr>
+				<th>Name</th>
+				<th colspan="2">Credentials</th>
+				<th></th>
+			</tr>
+		{% for client in clients %}
+			<tr>
+				<td rowspan="2"><a href="/client/{{ client.key }}">{{ client.name }}</td>
+				<td class="right">Key:</td>
+				<td class="left">{{ client.key }}</td>
+				<td rowspan="2">
+					<form method="post" action="/account/clients">
+						{% csrf_token %}
+						<input type="hidden" name="client_id" value="{{ client.id }}" />
+						<input type="submit" value="Remove" />
+					</form>
+				</td>
+			</tr>
+			<tr>
+				<td class="right">Secret:</td>
+				<td class="left">{{ client.secret }}</td>
+			</tr>			
+		{% endfor %}
+	</table>
+	<p><a href="/">Go to the homepage</a> to authorize these clients to request information on your behalf.</p>
+	{% else %}
+	<p>You have no clients. To create one just put a name in the form below - for example, “My Test Client”</p>
+	{% endif %}
+	
+	</div>
+	
+	<div class="form_container">
+	{% uni_form form form.helper %}
+	</div>
+	
+	<script type="text/javascript">
+		$(document).ready(function(){
+			$('form.uniForm').uniform();
+		});
+	</script>
+
+{% endblock %}

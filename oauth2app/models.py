@@ -11,7 +11,15 @@ from .lib.response import RESPONSE_CHOICES, CODE
 
 
 class TimestampGenerator(object):
-
+    """Callable Timestamp Generator that returns a UNIX time integer.
+    
+    **Kwargs:**
+    
+    * *seconds:* A integer indicating how many seconds in the future the
+      timestamp should be. *Default 0*
+    
+    *Returns int*
+    """
     def __init__(self, seconds=0):
         self.seconds = seconds
 
@@ -20,7 +28,14 @@ class TimestampGenerator(object):
 
 
 class KeyGenerator(object):
+    """Callable Key Generator that returns a random keystring.
     
+    **Args:**
+    
+    * *length:* A integer indicating how long the key should be.
+    
+    *Returns str*
+    """
     def __init__(self, length):
         self.length = length
     
@@ -29,8 +44,31 @@ class KeyGenerator(object):
 
 
 class Client(models.Model):
+    """Stores client authentication data.
     
+    **Args:**
+    
+    * *name:* A string representing the client name.
+    * *user:* A django.contrib.auth.models.User object representing the client
+       owner.
+    
+    **Kwargs:**
+    
+    * *description:* A string representing the client description. 
+      *Default None*
+    * *key:* A string representing the client key. *Default 30 character 
+      random string*    
+    * *secret:* A string representing the client secret. *Default 30 character
+      random string*
+    * *redirect_uri:* A string representing the client redirect_uri. 
+      *Default None*
+    * *authorized_reponse_types:* An integer representing the bit represented 
+      authorized response types. Example: oauth2app.lib.response.TOKEN | 
+      oauth2app.lib.response.CODE. *Default oauth2app.lib.response.CODE*
+      
+    """
     name = models.CharField(max_length=256)
+    user = models.ForeignKey(User)
     description = models.TextField(null=True, blank=True)    
     key = models.CharField(
         unique=True, 
@@ -44,17 +82,49 @@ class Client(models.Model):
     redirect_uri = models.URLField(null=True, blank=True)
     authorized_reponse_types = models.PositiveIntegerField(
         default=CODE)
-    
+
 
 class AccessRange(models.Model):
+    """Stores access range data, also known as scope.
     
-    # 255 max_length when unique with mysql
+    **Args:**
+    
+    * *key:* A string representing the access range scope. Used in access 
+      token requests.
+    
+    **Kwargs:**
+    
+    * *description:* A string representing the access range description. 
+      *Default None*   
+    
+    """
     key = models.CharField(unique=True, max_length=255, db_index=True) 
     description = models.TextField(blank=True)
 
 
 class AccessToken(models.Model):
+    """Stores access token data.
+
+    **Args:**
     
+    * *client:* A oauth2app.models.Client object
+    * *user:* A django.contrib.auth.models.User object    
+    
+    **Kwargs:**
+    
+    * *token:* A string representing the access key token. *Default 10 
+      character random string*
+    * *refresh_token:* A string representing the access key token. *Default 10 
+      character random string*
+    * *expire:* A positive integer timestamp representing the access token's 
+      expiration time.
+    * *scope:* A list of oauth2app.models.AccessRange objects. *Default None* 
+    * *refreshable:* A boolean that indicates whether this access token is
+      refreshable. *Default False*   
+         
+    """
+    client = models.ForeignKey(Client)
+    user = models.ForeignKey(User)
     token = models.CharField(
         unique=True,
         max_length=ACCESS_TOKEN_LENGTH, 
@@ -72,27 +142,42 @@ class AccessToken(models.Model):
         default=TimestampGenerator())
     expire = models.PositiveIntegerField(
         default=TimestampGenerator(ACCESS_TOKEN_EXPIRATION))
-    client = models.ForeignKey(Client)
-    user = models.ForeignKey(User)
-    scope = models.TextField(null=True, blank=True)
+    scope = models.ManyToManyField(AccessRange)
     refreshable = models.BooleanField(default=REFRESHABLE)
 
 
 class Code(models.Model):
+    """Stores authorization code data.
     
+    **Args:**
+    
+    * *client:* A oauth2app.models.Client object
+    * *user:* A django.contrib.auth.models.User object
+    
+    **Kwargs:**
+    
+    * *key:* A string representing the authorization code. *Default 30 
+      character random string*
+    * *expire:* A positive integer timestamp representing the access token's 
+      expiration time.
+    * *redirect_uri:* A string representing the redirect_uri provided by the 
+      requesting client when the code was issued. *Default None*
+    * *scope:* A list of oauth2app.models.AccessRange objects. *Default None* 
+    
+    """
+    client = models.ForeignKey(Client)
+    user = models.ForeignKey(User)
     key = models.CharField(
         unique=True, 
         max_length=CODE_KEY_LENGTH, 
         default=KeyGenerator(CODE_KEY_LENGTH),
         db_index=True)
-    client = models.ForeignKey(Client)
     issue = models.PositiveIntegerField(
         editable=False, 
         default=TimestampGenerator())
     expire = models.PositiveIntegerField(
         default=TimestampGenerator(CODE_EXPIRATION))
     redirect_uri = models.URLField(null=True, blank=True)
-    scope = models.TextField(null=True, blank=True)
-    client = models.ForeignKey(Client)
-    user = models.ForeignKey(User)
+    scope = models.ManyToManyField(AccessRange)
+    
 

@@ -1,0 +1,24 @@
+{% extends "layout.html" %}
+{% load uni_form_tags %}
+
+{% block title %}Authorize{% endblock %}
+
+{% block content %}
+
+	<h1>Authorize</h1>
+
+	<div class="content_container">
+		<p>Grant BLAH access to the following parts of your account?</p>
+	</div>
+	
+	<div class="form_container">
+	{% uni_form form helper %}
+	</div>
+	
+	<script type="text/javascript">
+		$(document).ready(function(){
+			$('form.uniForm').uniform();
+		});
+	</script>
+
+{% endblock %}

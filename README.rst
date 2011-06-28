@@ -1,31 +1,22 @@
-Django OAuth2 App
-=====================================
 
-OAuth2: 
-
-Based on:  http://code.google.com/p/django-oauth2
-
-Features
---------
-
+* See http://hiidef.github.com/oauth2app for full documentation. 
+* Based on http://code.google.com/p/django-oauth2
 * Support for OAuth 2.0 draft 16, http://tools.ietf.org/html/draft-ietf-oauth-v2-16
-
-OAuth 2 protocol compliance
----------------------------
-
-The current implementation of the package is based on OAuth2 draft 16. 
 
 Installation
 ------------
 
-If easy_install is available, you can use:
+If easy_install is available, you can use: ::
 
     easy_install https://github.com/hiidef/oauth2app/tarball/master
 
-Basic Usage
------------
+Introduction
+------------
 
-In settings.py, add 'oauth2app' to INSTALLED_APPS.
+The oauth2app module helps Django site operators provide an OAuth 2.0 interface. The module
+is registered as an application.
+
+In settings.py, add 'oauth2app' to INSTALLED_APPS. ::
 
 
 	INSTALLED_APPS = (
@@ -33,8 +24,11 @@ In settings.py, add 'oauth2app' to INSTALLED_APPS.
 	'oauth2app' 
 	)
 
+Sync the DB models. ::
 
-In urls.py, add /oauth2/authorize and /oauth2/token views to a new or existing app.
+	python manage.py syncdb
+
+In urls.py, add /oauth2/authorize and /oauth2/token views to a new or existing app. ::
 
 
 	urlpatterns += patterns('mysite.yourapp.views',
@@ -47,19 +41,19 @@ In urls.py, add /oauth2/authorize and /oauth2/token views to a new or existing a
 Create authorize and token handlers. Depending on your usage, the authorize handler will probably want
 to utilize a form that verifies the user wants to grant access to the requesting client. 'authorizer.client.name' 
 will return the requesting client name, authorizer.query_string() will return a query string to regenerate the 
-OAuth2 GET parameters to be used with the authorization form POST.
-
+OAuth 2.0 GET parameters to be used with the authorization form POST. ::
 
 	from django import forms
 	from django.views.decorators.csrf import csrf_exempt
 	from django.http import HttpResponseRedirect
 	from django.shortcuts import render_to_response
 	from django.contrib.auth.decorators import login_required
-	from oauth2app.authorize import Authorizer, MissingRedirectURI, AuthorizationException
+	from oauth2app.authorize import Authorizer, MissingRedirectURI, 
+	from oauth2app.authorize import AuthorizationException
 	from oauth2app.authorize import UnvalidatedRequest, UnauthenticatedUser
 	from oauth2app.token import TokenResponse
 
-	# Uses CSRF to prevent
+	# Uses CSRF to prevent request forgery
 	class OAuth2Form(forms.Form):
 	    connect = forms.IntegerField(required=True)
 

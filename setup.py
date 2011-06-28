@@ -8,15 +8,15 @@ setup(
 
     packages = find_packages(),
 
-    install_requires = ['Django>=1.2.3', 'simplejson>=2.1.5'],
+    install_requires = ['Django>=1.2.3', 'simplejson>=2.1.5', "django-uni-form>=0.8.0"],
     include_package_data = True,
 
     # metadata for upload to PyPI
     author = "John Wehr",
     author_email = "johnwehr@gmail.com",
-    description = "Django OAuth2 App",
+    description = "Django OAuth 2.0 Server App",
     license = "MIT License",
-    keywords = "django oauth2 oauth app",
-    url = "https://github.com/hiidef/oauth2_app"
+    keywords = "django oauth2 oauth app server",
+    url = "https://github.com/hiidef/oauth2app"
 
 )

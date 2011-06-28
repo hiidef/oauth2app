@@ -1,0 +1,137 @@
+{% extends "layout.html" %}
+
+{% block title %}OAuth 2.0 Example Site{% endblock %}
+
+{% block content %}
+
+<h1>OAuth 2.0 Example Site</h1>
+
+<div class="content_container">
+	<p>This example Django site implements OAuth 2.0 clients and servers.</p>
+	
+	<p>Start by <a href="/account/signup">signing up</a> then <a href="/account/clients">creating a client</a>. Clients are applications that request authorization from users to access data on their behalf.</p>
+	
+	{% if request.user.is_authenticated %}
+	<p>The following account data is available to authorized clients at the specified endpoint URI:</p>
+	<table class="data">
+		<tr>
+			<th>Name</th>
+			<th>Value</th>
+			<th>Scope</th>
+			<th>Endpoint URI</th>
+		</tr>
+		<tr>
+			<td>Date Joined</td><td>{{ request.user.date_joined }}</td><td>date_joined</td><td><a href="/api/date_joined">/api/date_joined</a></td>
+		</tr>
+		<tr>
+			<td>Last Login</td><td>{{ request.user.last_login }}</td><td>last_login</td><td><a href="/api/last_login">/api/last_login</a></td>
+		</tr>
+		<tr>
+			<td>Email</td><td>{{ request.user.email }}</td><td><em>No scope</em></td><td><a href="/api/email">/api/email</a></td>
+		</tr>
+	</table>
+	
+	{% if clients %}
+	<p>Authorize the clients at the various scopes:</p>
+	<table class="data">
+			<tr>
+				<th>Name</th>
+				<th>date_joined</th>
+				<th>last_login</th>
+				<th><em>No scope</em></th>
+			</tr>
+		{% for client in clients %}
+			<tr>
+				<td><a href="/client/{{ client.key }}">{{ client.name }}</a></td>
+				<td>
+					<form method="get" action="oauth2/authorize">
+						<input type="hidden" name="redirect_uri" value="http://127.0.0.1:8000/client/{{client.key}}/" />
+						<input type="hidden" name="response_type" value="code" />
+						<input type="hidden" name="client_id" value="{{client.key}}" />
+						<input type="hidden" name="scope" value="date_joined" />
+						<input type="submit" value="Request" />
+					</form>
+				</td>
+				<td>
+					<form method="get" action="oauth2/authorize">
+						<input type="hidden" name="redirect_uri" value="http://127.0.0.1:8000/client/{{client.key}}/" />
+						<input type="hidden" name="response_type" value="code" />
+						<input type="hidden" name="client_id" value="{{client.key}}" />
+						<input type="hidden" name="scope" value="last_login" />
+						<input type="submit" value="Request" />
+					</form>
+				</td>
+				<td>
+					<form method="get" action="oauth2/authorize">
+						<input type="hidden" name="redirect_uri" value="http://127.0.0.1:8000/client/{{client.key}}/" />
+						<input type="hidden" name="response_type" value="code" />
+						<input type="hidden" name="client_id" value="{{client.key}}" />
+						<input type="submit" value="Request" />
+					</form>
+				</td>
+			</tr>		
+		{% endfor %}
+	</table>
+	{% else %}
+	<p>You have no clients. <a href="/account/clients">Create one</a> to demo authorization.</p>
+	{% endif %}
+	
+	{% if access_tokens %}
+	<p>You have issued the following access tokens. Follow the links to see access your data using their credentials.</p>
+	<table class="data">
+			<tr>
+				<th>Client name</th>
+				<th>Scope</th>
+				<th>date_joined</th>
+				<th>last_login</th>
+				<th><em>No scope</em></th>
+			</tr>
+		{% for access_token in access_tokens %}
+			<tr>
+				<td><a href="/client/{{ client.key }}">{{ access_token.client.name }}</a></td>
+				<td>
+					{% if access_token.scope.all|length == 0 %}
+						<em>No scope</em>
+					{% endif %}
+					{% for access_range in access_token.scope.all %}
+						{{ access_range.key }}
+					{% endfor %}
+				</td>
+				<td><a href="/api/date_joined" class="authenticate" id="_{{access_token.token}}">/api/date_joined</a></td>
+				<td><a href="/api/last_login" class="authenticate" id="_{{access_token.token}}">/api/last_login</a></td>
+				<td><a href="/api/email" class="authenticate" id="_{{access_token.token}}">/api/email</a></td>
+			</tr>		
+		{% endfor %}
+	</table>
+	{% else %}
+	<p>You have no access_tokens. Authorize a client to create one.</p>
+	{% endif %}	
+	
+	<script type="text/javascript">
+		$(document).ready(function(){
+			$('a.authenticate').click(function(e){
+				e.preventDefault();
+				var token = this.id.replace("_", "");
+				$.ajax({
+					url: this.href,
+					dataType: "jsonp",
+					beforeSend: function(xhr){
+					    xhr.setRequestHeader("Authorization", "Bearer " + token)
+					},
+					success: function(data) {
+						var response = [];
+						for(key in data){
+							response.push(key + ":" + data[key]);
+						}
+						alert(response.join('\n'));
+					},
+				});
+			});
+		});
+	</script>
+	{% endif %}
+</div>
+
+
+
+{% endblock %}

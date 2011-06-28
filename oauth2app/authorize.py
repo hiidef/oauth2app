@@ -1,85 +1,99 @@
 #-*- coding: utf-8 -*-
 
+
 from urllib import urlencode
 from django.http import absolute_http_url_re, HttpResponseRedirect
 from .exceptions import OAuth2Exception
 from .models import Client, AccessRange, Code, AccessToken
-from .lib.response import RESPONSE_TYPES, TOKEN, CODE, CODE_AND_TOKEN, is_valid_response_type
+from .lib.response import RESPONSE_TYPES, TOKEN, CODE, CODE_AND_TOKEN
+from .lib.response import is_valid_response_type
 from .consts import ACCESS_TOKEN_EXPIRATION
 from .lib.uri import add_parameters, add_fragments, normalize
 
 
 class AuthorizationException(OAuth2Exception):
-    error = 'invalid_request'
+    """Authorization exception base class."""
+    pass
 
 
 class MissingRedirectURI(OAuth2Exception):
+    """Neither the request nor the client specify a redirect_url."""
     pass
 
 
 class UnauthenticatedUser(OAuth2Exception):
+    """The provided user is not internally authenticated, via 
+    user.is_authenticated()"""
     pass
 
 
 class UnvalidatedRequest(OAuth2Exception):
+    """The method requested requires a validated request to continue."""
     pass
     
 
 class InvalidRequest(AuthorizationException):
+    """The request is missing a required parameter, includes an
+    unsupported parameter or parameter value, or is otherwise
+    malformed."""
     error = 'invalid_request'
 
 
 class InvalidClient(AuthorizationException):
+    """Client authentication failed (e.g. unknown client, no
+    client credentials included, multiple client credentials
+    included, or unsupported credentials type)."""
     error = 'invalid_client'
 
 
 class UnauthorizedClient(AuthorizationException):
+    """The client is not authorized to request an authorization
+    code using this method."""
     error = 'unauthorized_client'
 
 
-class RedirectURIMismatch(AuthorizationException):
-    error = 'redirect_uri_mismatch'
-
-
 class AccessDenied(AuthorizationException):
+    """The resource owner or authorization server denied the
+    request."""
     error = 'access_denied'
 
 
 class UnsupportedResponseType(AuthorizationException):
+    """The authorization server does not support obtaining an
+    authorization code using this method."""
     error = 'unsupported_response_type'
 
 
 class InvalidScope(AuthorizationException):
+    """The requested scope is invalid, unknown, or malformed."""
     error = 'invalid_scope'
-
-
-def authorize(request):
-    authorizer = Authorizer(request)
-    try:
-        authorizer.validate()
-    except MissingRedirectURI, e:
-        # Return a 500 or something.
-        pass
-    except AuthorizationException, e:
-        # Invalid request.
-        return authorizer.error_redirect()
-    try:
-        return authorizer.grant_redirect()
-    except UnvalidatedRequest, e:
-        pass
-        # The validate() method must be run before grant().
-    except UnauthenticatedUser, e:
-        # request.user.is_authenticated() is false. Log the user in.
-        pass
 
     
 class Authorizer(object):
-    
+    """Access authorizer. Validates access credentials and generates
+    a response with an authorization code passed as a parameter to the
+    redirect URI, an access token passed as a URI fragment to the redirect
+    URI, or both.
+
+    **Args:**
+
+    * *request:* Django HttpRequest object.
+
+    **Kwargs:**
+
+    * *scopes:* A iterable of oauth2app.models.AccessRange objects.
+    """
     client = None
     valid = False
     error = None
     
-    def __init__(self, request):
+    def __init__(self, request, scope=None):
+        if scope is None:
+            self.authorized_scope = None
+        elif isinstance(scope, AccessRange):
+            self.authorized_scope = set([scope.key])
+        else:
+            self.authorized_scope = set([x.key for x in scope])
         self.response_type = request.REQUEST.get('response_type')
         self.client_id = request.REQUEST.get('client_id')
         self.redirect_uri = request.REQUEST.get('redirect_uri')
@@ -89,10 +103,15 @@ class Authorizer(object):
         self.request = request
         
     def validate(self):
+        """Validate the request. Raises an AuthorizationException if the 
+        request fails authorization, or a MissingRedirectURI if no 
+        redirect_uri is available.
+        
+        *Returns None*"""
         try:
             self._validate()
         except AuthorizationException, e:
-            self.check_redirect_uri()
+            self._check_redirect_uri()
             self.error = e
             raise e
         self.valid = True
@@ -112,7 +131,7 @@ class Authorizer(object):
         elif self.client.redirect_uri is not None:
             if normalize(self.redirect_uri) != normalize(self.client.redirect_uri):
                 self.redirect_uri = self.client.redirect_uri
-                raise RedirectURIMismatch("""Registered redirect_uri doesn't
+                raise InvalidRequest("""Registered redirect_uri doesn't
                     match provided redirect_uri.""")
         self.redirect_uri = self.redirect_uri or self.client.redirect_uri
         # Check response type
@@ -130,6 +149,8 @@ class Authorizer(object):
         if not absolute_http_url_re.match(self.redirect_uri):
             raise InvalidRequest('Absolute URI required for redirect_uri')
         # Scope 
+        if self.authorized_scope is not None and self.scope is None:
+            self.scope = self.authorized_scope
         if self.scope is not None:
             scopes = set(self.scope.split())
             access_ranges = AccessRange.objects.filter(key__in=scopes)
@@ -138,15 +159,26 @@ class Authorizer(object):
             if len(difference) != 0:
                 raise InvalidScope("""Following access ranges do not
                     exist: %s""" % ', '.join(difference))
-    
-    def check_redirect_uri(self):
+            if self.authorized_scope is not None:
+                new_scope = scopes - self.authorized_scope
+                if len(new_scope) > 0:
+                    raise InvalidScope("""Invalid scope request: %s""" % list(new_scope))
+                    
+    def _check_redirect_uri(self):
+        """Raise MissingRedirectURI if no redirect_uri is available."""
         if self.redirect_uri is None:
             raise MissingRedirectURI('No redirect_uri to send response.')
         if not absolute_http_url_re.match(self.redirect_uri):
             raise MissingRedirectURI('Absolute redirect_uri required.')
     
     def error_redirect(self):
-        self.check_redirect_uri()
+        """In the event of an error, return a Django HttpResponseRedirect
+        with the appropriate error parameters.
+        
+        Raises MissingRedirectURI if no redirect_uri is available.
+        
+        *Returns HttpResponseRedirect*"""
+        self._check_redirect_uri()
         if self.error is not None:
             e = self.error
         else:
@@ -157,16 +189,37 @@ class Authorizer(object):
         redirect_uri = add_parameters(self.redirect_uri, qs)
         return HttpResponseRedirect(redirect_uri)
  
-    def query_string(self):
+    def _query_string(self):
+        """Returns the a url encoded query string useful for resending request
+        parameters when a user authorizes the request via a form POST.
+        
+        Raises UnvalidatedRequest if the request has not been validated.
+        
+        *Returns str*"""
         if not self.valid:
             raise UnvalidatedRequest("""This request is invalid or has not 
                 been validated.""")
-        return urlencode({
+        parameters = {
             "response_type":self.response_type,
-            "client_id":self.client_id,
-            "redirect_uri":self.redirect_uri})
-        
+            "client_id":self.client_id}
+        if self.redirect_uri is not None:
+            parameters["redirect_uri"] = self.redirect_uri
+        if self.state is not None:
+            parameters["state"] = self.state
+        if self.scope is not None:
+            parameters["scope"] = self.scope        
+        return urlencode(parameters)
+    
+    query_string = property(_query_string)
+    
     def grant_redirect(self):
+        """On successful authorization of the request, return a Django 
+        HttpResponseRedirect with the appropriate authorization code parameters
+        or access token URI fragments..
+        
+        Raises UnvalidatedRequest if the request has not been validated.
+        
+        *Returns HttpResponseRedirect*"""
         if not self.valid:
             raise UnvalidatedRequest("""This request is invalid or has not 
                 been validated.""")
@@ -174,17 +227,25 @@ class Authorizer(object):
             qs = {}
             frag = {}
             response_type = RESPONSE_TYPES[self.response_type]
+            if self.scope is not None:
+                scopes = set(self.scope.split())
+                access_ranges = list(AccessRange.objects.filter(key__in=scopes))
+            else:
+                access_ranges = []
             if response_type in [CODE, CODE_AND_TOKEN]:
                 code = Code.objects.create(
                     user=self.user, 
                     client=self.client,
-                    redirect_uri=self.redirect_uri,
-                    scope=self.scope)
+                    redirect_uri=self.redirect_uri)
+                code.scope = access_ranges
+                code.save()
                 qs['code'] = code.key
             if response_type in [TOKEN, CODE_AND_TOKEN]:
                 access_token = AccessToken.objects.create(
                     user=self.user,
                     client=self.client)
+                access_token.scope = access_ranges
+                access_token.save()
                 frag['access_token'] = access_token.token
                 frag['expires_in'] = ACCESS_TOKEN_EXPIRATION
                 frag['scope'] = self.scope

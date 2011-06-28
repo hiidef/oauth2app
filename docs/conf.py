@@ -44,7 +44,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Django OAuth 2.0 App'
+project = u'Django OAuth 2.0 Server App'
 copyright = u'2011, John Wehr'
 
 # The version info for the project you're documenting, acts as replacement for
