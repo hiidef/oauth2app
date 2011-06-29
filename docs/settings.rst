@@ -93,3 +93,12 @@ Send MAC style authentication parameters. See http://tools.ietf.org/html/draft-i
 
 *Default True*
 
+Realm
+-----
+::
+    OAUTH2_REALM
+
+Authentication realm
+
+*Default ""*
+

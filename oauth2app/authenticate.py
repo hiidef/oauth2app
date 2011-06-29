@@ -5,7 +5,6 @@ from django.http import HttpResponse, HttpResponseBadRequest
 from urlparse import parse_qsl
 from .exceptions import OAuth2Exception
 from .models import AccessToken, AccessRange
-from simplejson import dumps
 
 
 class AuthenticationException(OAuth2Exception):
@@ -31,6 +30,7 @@ class InsufficientScope(AuthenticationException):
     """The request requires higher privileges than provided by the
     access token."""
     error = 'insufficient_scope'
+
     
 class Authenticator(object):
     """Django HttpRequest authenticator. Checks a request for valid
@@ -64,7 +64,7 @@ class Authenticator(object):
             auth = self.request.META["HTTP_AUTHORIZATION"].split()
             self.auth_type = auth[0].lower()
             self.auth_value = " ".join(auth[1:]).strip()
-        self.callback = request.REQUEST.get('callback')
+
     
     def validate(self):
         """Validate the request. Raises an AuthenticationException if the 
@@ -143,14 +143,6 @@ class Authenticator(object):
         return self.access_token.client
     
     client = property(_get_client)
-
-    def grant_response(self, data):
-        json_data = dumps(data)
-        if self.callback is not None:
-            json_data = "%s(%s);" % (self.callback, json_data)
-        return HttpResponse(    
-            content=json_data, 
-            content_type='application/json')
     
     def error_response(self, error=None):
         """In the event of an error, return a Django HttpResponseBadRequest
@@ -163,16 +155,9 @@ class Authenticator(object):
             e = self.error
         else:
             e = InvalidRequest("Access Denied.")
-        data = {
-            'error': getattr(e, "error", "invalid_request"), 
-            'error_description': u'%s' % e.message}
-        json_data = dumps(data)
-        if self.callback is not None:
-            json_data = "%s(%s);" % (self.callback, json_data)
-            return HttpResponse(    
-                content=json_data, 
-                content_type='application/json')
-        else:
-            return HttpResponseBadRequest(    
-                content=json_data, 
-                content_type='application/json')
+        error = getattr(e, "error", "invalid_request")
+        error_description = e.message
+
+        return HttpResponseBadRequest(    
+            content=json_data, 
+            content_type='application/json')

@@ -22,3 +22,5 @@ CODE_EXPIRATION = getattr(settings, "OAUTH2_CODE_EXPIRATION", 120)
 ACCESS_TOKEN_EXPIRATION = getattr(settings, "OAUTH2_ACCESS_TOKEN_EXPIRATION", 3600)
 # Send MAC style authentication parameters. See http://tools.ietf.org/html/draft-ietf-oauth-v2-http-mac-00
 MAC_KEY = getattr(settings, "OAUTH2_MAC_KEY", True)
+# Authentication realm
+REALM = getattr(settings, "OAUTH2_REALM", "")
