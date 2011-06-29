@@ -100,17 +100,34 @@ Create authorize and missing_redirect_uri handlers. ::
 Authenticate requests. ::
 
     from oauth2app.authenticate import Authenticator, AuthenticationException
-
-    def email(request):
+    from django.http import HttpResponse
+    
+    def test(request):
         authenticator = Authenticator(request)
+        try:
+            # Validate the request.
+            authenticator.validate()
+        except AuthenticationException:
+            # Return an error response.
+            return authenticator.error_response(content="You didn't authenticate.")
+        username = authenticator.user.username
+        return HttpResponse(content="Hi %s, You authenticated!" % username)
+
+If you want to authenticate JSON requests try the JSONAuthenticator. ::
+
+    from oauth2app.authenticate import JSONAuthenticator, AuthenticationException
+
+    def test(request):
+        authenticator = JSONAuthenticator(request)
         try:
             # Validate the request.
             authenticator.validate()
         except AuthenticationException:
             # Return a JSON encoded error response.
             return authenticator.error_response()
-        # Return a JSON encoded success response.
-        return authenticator.grant_response({"email":request.user.email})    
+        username = authenticator.user.userame
+        # Return a JSON encoded response.
+        return authenticator.response({"username":username})
 
 Examples
 --------

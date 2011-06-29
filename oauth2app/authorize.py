@@ -126,26 +126,26 @@ class Authorizer(object):
         # Redirect URI
         if self.redirect_uri is None:
             if self.client.redirect_uri is None:
-                raise MissingRedirectURI("""No redirect_uri 
-                    provided or registered.""")
+                raise MissingRedirectURI("No redirect_uri"
+                    "provided or registered.")
         elif self.client.redirect_uri is not None:
             if normalize(self.redirect_uri) != normalize(self.client.redirect_uri):
                 self.redirect_uri = self.client.redirect_uri
-                raise InvalidRequest("""Registered redirect_uri doesn't
-                    match provided redirect_uri.""")
+                raise InvalidRequest("Registered redirect_uri doesn't "
+                    "match provided redirect_uri.")
         self.redirect_uri = self.redirect_uri or self.client.redirect_uri
         # Check response type
         if self.response_type is None:
             raise InvalidRequest('response_type is a required parameter.')
         if self.response_type not in RESPONSE_TYPES:
-            raise InvalidRequest("""No such response 
-                type: %s""" % self.response_type)
+            raise InvalidRequest("No such response " 
+                "type: %s" % self.response_type)
         # Response type
         if not is_valid_response_type(
                 RESPONSE_TYPES[self.response_type], 
                 self.client.authorized_reponse_types):
-            raise UnauthorizedClient("""Response type %s not allowed for
-                client""" % self.response_type)        
+            raise UnauthorizedClient("Response type %s not allowed for "
+                "client" % self.response_type)        
         if not absolute_http_url_re.match(self.redirect_uri):
             raise InvalidRequest('Absolute URI required for redirect_uri')
         # Scope 
@@ -157,12 +157,12 @@ class Authorizer(object):
             access_ranges = set(access_ranges.values_list('key', flat=True))
             difference = access_ranges.symmetric_difference(scopes)
             if len(difference) != 0:
-                raise InvalidScope("""Following access ranges do not
-                    exist: %s""" % ', '.join(difference))
+                raise InvalidScope("Following access ranges do not "
+                    "exist: %s" % ', '.join(difference))
             if self.authorized_scope is not None:
                 new_scope = scopes - self.authorized_scope
                 if len(new_scope) > 0:
-                    raise InvalidScope("""Invalid scope request: %s""" % list(new_scope))
+                    raise InvalidScope("Invalid scope: %s" % list(new_scope))
                     
     def _check_redirect_uri(self):
         """Raise MissingRedirectURI if no redirect_uri is available."""
@@ -197,8 +197,8 @@ class Authorizer(object):
         
         *Returns str*"""
         if not self.valid:
-            raise UnvalidatedRequest("""This request is invalid or has not 
-                been validated.""")
+            raise UnvalidatedRequest("This request is invalid or has not" 
+                "been validated.")
         parameters = {
             "response_type":self.response_type,
             "client_id":self.client_id}
@@ -221,8 +221,8 @@ class Authorizer(object):
         
         *Returns HttpResponseRedirect*"""
         if not self.valid:
-            raise UnvalidatedRequest("""This request is invalid or has not 
-                been validated.""")
+            raise UnvalidatedRequest("This request is invalid or has not "
+                "been validated.")
         if self.user.is_authenticated():
             qs = {}
             frag = {}
@@ -255,5 +255,5 @@ class Authorizer(object):
             redirect_uri = add_fragments(redirect_uri, frag)
             return HttpResponseRedirect(redirect_uri)
         else:
-            raise UnauthenticatedUser("""Django user object associated with the
-                request is not authenticated.""")
+            raise UnauthenticatedUser("Django user object associated with the "
+                "request is not authenticated.")

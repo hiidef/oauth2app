@@ -1,10 +1,13 @@
 #-*- coding: utf-8 -*-
 
 
-from django.http import HttpResponse, HttpResponseBadRequest
 from urlparse import parse_qsl
+from simplejson import dumps
+from django.conf import settings
+from django.http import HttpResponse
 from .exceptions import OAuth2Exception
 from .models import AccessToken, AccessRange
+from .consts import REALM
 
 
 class AuthenticationException(OAuth2Exception):
@@ -42,7 +45,7 @@ class Authenticator(object):
     
     **Kwargs:**
     
-    * *scopes:* A iterable of oauth2app.models.AccessRange objects.
+    * *scope:* A iterable of oauth2app.models.AccessRange objects.
     """
     
     valid = False
@@ -50,6 +53,7 @@ class Authenticator(object):
     auth_type = None
     auth_value = None
     error = None
+    attempted_validation = False
     
     def __init__(self, request, scope=None):
         if scope is None:
@@ -80,7 +84,8 @@ class Authenticator(object):
         
     def _validate(self):
         # Check for Bearer or Mac authorization
-        if self.auth_type:
+        if self.auth_type in ["bearer", "mac"]:
+            self.attempted_validation = True
             if self.auth_type == "bearer":
                 self._validate_bearer(self.auth_value)
             elif self.auth_type == "mac":
@@ -88,18 +93,19 @@ class Authenticator(object):
             self.valid = True
         # Check for posted/paramaterized bearer token.
         elif self.bearer_token is not None:
+            self.attempted_validation = True
             self._validate_bearer(self.bearer_token)
             self.valid = True
             return
         else:
-            raise InvalidRequest("""Request authentication failed, no
-                authentication credentials provided.""")    
+            raise InvalidRequest("Request authentication failed, no "
+                "authentication credentials provided.")    
         if self.authorized_scope is not None:
             token_scope = set([x.key for x in self.access_token.scope.all()])
             new_scope = self.authorized_scope - token_scope
             if len(new_scope) > 0:
-                raise InsufficientScope("""Access token has insufficient 
-                    scope: %s""" % list(new_scope))
+                raise InsufficientScope(("Access token has insufficient" 
+                    "scope: %s") % list(self.authorized_scope))
             
     def _validate_bearer(self, token):
         """Validate Bearer token."""
@@ -143,21 +149,94 @@ class Authenticator(object):
         return self.access_token.client
     
     client = property(_get_client)
-    
-    def error_response(self, error=None):
-        """In the event of an error, return a Django HttpResponseBadRequest
-        with the appropriate JSON encoded error parameters.
+ 
+    def error_response(self, 
+            content='', 
+            mimetype=None, 
+            content_type=settings.DEFAULT_CONTENT_TYPE):
+        """Error response generator. Returns a Django HttpResponse with status
+        401 and the approproate headers set. See Django documentation for details.
+        https://docs.djangoproject.com/en/dev/ref/request-response/#django.http.HttpResponse.__init__
 
-        *Returns HttpResponseBadRequest*"""
-        if error is not None:
-            e = error
-        elif self.error is not None:
-            e = self.error
+        **Kwargs:**
+
+        * *content:* See Django docs. *Default ''*
+        * *mimetype:* See Django docs. *Default None*
+        * *content_type:* See Django docs. *Default DEFAULT_CONTENT_TYPE*
+        
+        """
+        response = HttpResponse(
+            content=content, 
+            mimetype=mimetype,
+            status=401,
+            content_type=content_type)
+        if not self.attempted_validation:
+            response['WWW-Authenticate'] = 'Bearer realm="%s"' % REALM
+            return response
         else:
-            e = InvalidRequest("Access Denied.")
-        error = getattr(e, "error", "invalid_request")
-        error_description = e.message
+            if self.error is not None:
+                error = getattr(self.error, "error", "invalid_request")
+                error_description = self.error.message
+            else:
+                error = "invalid_request"
+                error_description = "Invalid Request."
+            header = [
+                'Bearer realm="%s"' % REALM,
+                'error="%s"' % error,
+                'error_description="%s"' % error_description]
+            if isinstance(self.error, InsufficientScope):
+                header.append('scope=%s' % ' '.join(self.authorized_scope))
+            response['WWW-Authenticate'] = ', '.join(header)
+            return response
+            
 
-        return HttpResponseBadRequest(    
-            content=json_data, 
+class JSONAuthenticator(Authenticator):
+    """Wraps Authenticator, adds support for a callback parameter and 
+    JSON related. convenience methods.
+
+    **Args:**
+
+    * *request:* Django HttpRequest object.
+
+    **Kwargs:**
+
+    * *scope:* A iterable of oauth2app.models.AccessRange objects.
+    """
+    def __init__(self, request, scope=None):
+        Authenticator.__init__(self, request, scope=scope)
+        self.callback = request.REQUEST.get('callback')
+
+    def response(self, data):
+        """Returns a HttpResponse object of JSON serialized data.
+
+        **Args:**
+
+        * *data:* Object to be JSON serialized and returned.
+        """
+        json_data = dumps(data)
+        if self.callback is not None:
+            json_data = "%s(%s);" % (self.callback, json_data)
+        response = HttpResponse(
+            content=json_data,
             content_type='application/json')
+        return response
+
+    def error_response(self):
+        """Returns a HttpResponse object of JSON error data."""
+        if self.error is not None:
+            content = dumps({ 
+                "error":getattr(self.error, "error", "invalid_request"),
+                "error_description":self.error.message})
+        else:
+            content = ({
+                "error":"invalid_request",
+                "error_description":"Invalid Request."})
+        if self.callback is not None:
+            content = "%s(%s);" % (self.callback, content)
+        response = Authenticator.error_response(
+            self, 
+            content=content, 
+            content_type='application/json')
+        if self.callback is not None:
+            response.status_code = 200
+        return response
