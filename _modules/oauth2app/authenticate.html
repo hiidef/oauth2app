@@ -72,7 +72,6 @@
 <span class="kn">from</span> <span class="nn">urlparse</span> <span class="kn">import</span> <span class="n">parse_qsl</span>
 <span class="kn">from</span> <span class="nn">.exceptions</span> <span class="kn">import</span> <span class="n">OAuth2Exception</span>
 <span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">AccessToken</span><span class="p">,</span> <span class="n">AccessRange</span>
-<span class="kn">from</span> <span class="nn">simplejson</span> <span class="kn">import</span> <span class="n">dumps</span>
 
 
 <div class="viewcode-block" id="AuthenticationException"><a class="viewcode-back" href="../../authenticate.html#oauth2app.authenticate.AuthenticationException">[docs]</a><span class="k">class</span> <span class="nc">AuthenticationException</span><span class="p">(</span><span class="n">OAuth2Exception</span><span class="p">):</span>
@@ -98,6 +97,7 @@
     <span class="sd">&quot;&quot;&quot;The request requires higher privileges than provided by the</span>
 <span class="sd">    access token.&quot;&quot;&quot;</span>
     <span class="n">error</span> <span class="o">=</span> <span class="s">&#39;insufficient_scope&#39;</span>
+
     </div>
 <div class="viewcode-block" id="Authenticator"><a class="viewcode-back" href="../../authenticate.html#oauth2app.authenticate.Authenticator">[docs]</a><span class="k">class</span> <span class="nc">Authenticator</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Django HttpRequest authenticator. Checks a request for valid</span>
@@ -131,7 +131,7 @@
             <span class="n">auth</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">META</span><span class="p">[</span><span class="s">&quot;HTTP_AUTHORIZATION&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">auth_type</span> <span class="o">=</span> <span class="n">auth</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">auth_value</span> <span class="o">=</span> <span class="s">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">auth</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">callback</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">REQUEST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;callback&#39;</span><span class="p">)</span>
+
     
 <div class="viewcode-block" id="Authenticator.validate"><a class="viewcode-back" href="../../authenticate.html#oauth2app.authenticate.Authenticator.validate">[docs]</a>    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Validate the request. Raises an AuthenticationException if the </span>
@@ -210,15 +210,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">access_token</span><span class="o">.</span><span class="n">client</span>
     
     <span class="n">client</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_get_client</span><span class="p">)</span>
-
-<div class="viewcode-block" id="Authenticator.grant_response"><a class="viewcode-back" href="../../authenticate.html#oauth2app.authenticate.Authenticator.grant_response">[docs]</a>    <span class="k">def</span> <span class="nf">grant_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="n">json_data</span> <span class="o">=</span> <span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">callback</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="n">json_data</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">(</span><span class="si">%s</span><span class="s">);&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">callback</span><span class="p">,</span> <span class="n">json_data</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span>    
-            <span class="n">content</span><span class="o">=</span><span class="n">json_data</span><span class="p">,</span> 
-            <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;application/json&#39;</span><span class="p">)</span>
-    </div>
+    
 <div class="viewcode-block" id="Authenticator.error_response"><a class="viewcode-back" href="../../authenticate.html#oauth2app.authenticate.Authenticator.error_response">[docs]</a>    <span class="k">def</span> <span class="nf">error_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;In the event of an error, return a Django HttpResponseBadRequest</span>
 <span class="sd">        with the appropriate JSON encoded error parameters.</span>
@@ -230,19 +222,12 @@
             <span class="n">e</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">error</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">e</span> <span class="o">=</span> <span class="n">InvalidRequest</span><span class="p">(</span><span class="s">&quot;Access Denied.&quot;</span><span class="p">)</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s">&#39;error&#39;</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="s">&quot;error&quot;</span><span class="p">,</span> <span class="s">&quot;invalid_request&quot;</span><span class="p">),</span> 
-            <span class="s">&#39;error_description&#39;</span><span class="p">:</span> <span class="s">u&#39;</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">e</span><span class="o">.</span><span class="n">message</span><span class="p">}</span>
-        <span class="n">json_data</span> <span class="o">=</span> <span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">callback</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="n">json_data</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">(</span><span class="si">%s</span><span class="s">);&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">callback</span><span class="p">,</span> <span class="n">json_data</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span>    
-                <span class="n">content</span><span class="o">=</span><span class="n">json_data</span><span class="p">,</span> 
-                <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;application/json&#39;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">HttpResponseBadRequest</span><span class="p">(</span>    
-                <span class="n">content</span><span class="o">=</span><span class="n">json_data</span><span class="p">,</span> 
-                <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;application/json&#39;</span><span class="p">)</span></div></div>
+        <span class="n">error</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="s">&quot;error&quot;</span><span class="p">,</span> <span class="s">&quot;invalid_request&quot;</span><span class="p">)</span>
+        <span class="n">error_description</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">message</span>
+
+        <span class="k">return</span> <span class="n">HttpResponseBadRequest</span><span class="p">(</span>    
+            <span class="n">content</span><span class="o">=</span><span class="n">json_data</span><span class="p">,</span> 
+            <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;application/json&#39;</span><span class="p">)</span></div></div>
 </pre></div>
 
           </div>
