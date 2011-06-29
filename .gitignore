@@ -1,4 +1,5 @@
 generate_docs.sh
+examples/mysite/env/
 examples/mysite/mysite.sqlite
 docs/_build/*
 .DS_Store

@@ -21,6 +21,10 @@ DATABASES = {
     }
 }
 
+FIXTURE_DIRS = (
+   os.path.join(os.path.dirname(__file__), 'apps/account/fixtures'),
+)
+
 TIME_ZONE = 'America/Chicago'
 
 LANGUAGE_CODE = 'en-us'
