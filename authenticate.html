@@ -96,6 +96,9 @@ the appropriate OAuth2 headers.</p>
     <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="s">&quot;Hi </span><span class="si">%s</span><span class="s">, You authenticated!&quot;</span> <span class="o">%</span> <span class="n">username</span><span class="p">)</span>
 </pre></div>
 </div>
+</div>
+<div class="section" id="jsonauthenticator">
+<h2>JSONAuthenticator<a class="headerlink" href="#jsonauthenticator" title="Permalink to this headline">¶</a></h2>
 <p>The JSONAuthenticator adds convenience methods and supports an optional callback request parameter
 for use with JSONP requests.</p>
 <p>In the event of an error the JSONAuthenticator:error_response() method will return a
@@ -261,6 +264,7 @@ JSON related. convenience methods.</p>
   <ul>
 <li><a class="reference internal" href="#">Authentication</a><ul>
 <li><a class="reference internal" href="#authenticator">Authenticator</a></li>
+<li><a class="reference internal" href="#jsonauthenticator">JSONAuthenticator</a></li>
 <li><a class="reference internal" href="#module-oauth2app.authenticate">Module Reference</a></li>
 <li><a class="reference internal" href="#to-do">To Do</a></li>
 </ul>
