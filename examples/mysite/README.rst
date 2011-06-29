@@ -8,7 +8,10 @@ Installation
 ------------
 
 The project uses django.db.backends.sqlite3 and requires minimal configuration. ::
-
+    
+    git clone git@github.com:hiidef/oauth2app.git oauth2app
+    cd oauth2app/examples/mysite
+    git checkout master
     pip install https://github.com/hiidef/oauth2app/tarball/master
     python manage.py syncdb
     python manage.py runserver
