@@ -8,24 +8,46 @@ The Authenticator object verifies that a request has proper authentication crede
 of one or more AccessRange objects can be passed to verify that tokens used to access this resource are authorized
 to access the specific scope.
 
-In the event of an error the Authenticator:error_response() method will return a standard error response.
-
-If a request is authenticated, Authenticator:grant_response() will serialize an object into a JSON response. ::
+In the event of an error the Authenticator:error_response() method will wrap an error response with
+the appropriate OAuth2 headers. ::
 
     from oauth2app.authenticate import Authenticator, AuthenticationException
     from oauth2app.models import AccessRange
-    
-    def email(request):
-        scope = AccessRange.objects.get(key="last_login")
+    from django.http import HttpResponse
+
+    def test(request):
+        scope = AccessRange.objects.get(key="test_scope")
         authenticator = Authenticator(request, scope=scope)
+        try:
+            # Validate the request.
+            authenticator.validate()
+        except AuthenticationException:
+            # Return an error response.
+            return authenticator.error_response(content="You didn't authenticate.")
+        username = authenticator.user.username
+        return HttpResponse(content="Hi %s, You authenticated!" % username)
+
+The JSONAuthenticator adds convenience methods and supports an optional callback request parameter
+for use with JSONP requests. 
+
+In the event of an error the JSONAuthenticator:error_response() method will return a 
+JSON formatted error HttpResponse.
+
+JSONAuthenticator:response() will serialize an object and return a formatted HttpResponse. ::
+
+    from oauth2app.authenticate import JSONAuthenticator, AuthenticationException
+
+    def test(request):
+        authenticator = JSONAuthenticator(request)
         try:
             # Validate the request.
             authenticator.validate()
         except AuthenticationException:
             # Return a JSON encoded error response.
             return authenticator.error_response()
-        # Return a JSON encoded success response.
-        return authenticator.grant_response({"email":request.user.email})
+        username = authenticator.user.userame
+        # Return a JSON encoded response.
+        return authenticator.response({"username":username})
 
 Module Reference 
 ----------------
@@ -33,3 +55,12 @@ Module Reference
 .. automodule:: oauth2app.authenticate
    :members:
    :undoc-members:
+   
+To Do
+-----
+
+.. todo::
+   MAC Authentication
+   
+.. todo::
+   Check for access token expiration

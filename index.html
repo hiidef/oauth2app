@@ -71,7 +71,7 @@
 <div class="section" id="about">
 <h2>About<a class="headerlink" href="#about" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li>See <a class="reference external" href="http://hiidef.github.com/oauth2app">http://hiidef.github.com/oauth2app</a> for full documentation.</li>
+<li>See <a class="reference external" href="http://hiidef.github.com/oauth2app">http://hiidef.github.com/oauth2app</a> for documentation.</li>
 <li>See <a class="reference external" href="https://github.com/hiidef/oauth2app">https://github.com/hiidef/oauth2app</a> for source code.</li>
 <li>Based on <a class="reference external" href="http://code.google.com/p/django-oauth2">http://code.google.com/p/django-oauth2</a></li>
 <li>Support for OAuth 2.0 draft 16, <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-oauth-v2-16">http://tools.ietf.org/html/draft-ietf-oauth-v2-16</a></li>
@@ -166,23 +166,40 @@ is registered as an application.</p>
 </div>
 <p>Authenticate requests.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">oauth2app.authenticate</span> <span class="kn">import</span> <span class="n">Authenticator</span><span class="p">,</span> <span class="n">AuthenticationException</span>
+<span class="kn">from</span> <span class="nn">django.http</span> <span class="kn">import</span> <span class="n">HttpResponse</span>
 
-<span class="k">def</span> <span class="nf">email</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">test</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
     <span class="n">authenticator</span> <span class="o">=</span> <span class="n">Authenticator</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c"># Validate the request.</span>
+        <span class="n">authenticator</span><span class="o">.</span><span class="n">validate</span><span class="p">()</span>
+    <span class="k">except</span> <span class="n">AuthenticationException</span><span class="p">:</span>
+        <span class="c"># Return an error response.</span>
+        <span class="k">return</span> <span class="n">authenticator</span><span class="o">.</span><span class="n">error_response</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="s">&quot;You didn&#39;t authenticate.&quot;</span><span class="p">)</span>
+    <span class="n">username</span> <span class="o">=</span> <span class="n">authenticator</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">username</span>
+    <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="s">&quot;Hi </span><span class="si">%s</span><span class="s">, You authenticated!&quot;</span> <span class="o">%</span> <span class="n">username</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>If you want to authenticate JSON requests try the JSONAuthenticator.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">oauth2app.authenticate</span> <span class="kn">import</span> <span class="n">JSONAuthenticator</span><span class="p">,</span> <span class="n">AuthenticationException</span>
+
+<span class="k">def</span> <span class="nf">test</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="n">authenticator</span> <span class="o">=</span> <span class="n">JSONAuthenticator</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="c"># Validate the request.</span>
         <span class="n">authenticator</span><span class="o">.</span><span class="n">validate</span><span class="p">()</span>
     <span class="k">except</span> <span class="n">AuthenticationException</span><span class="p">:</span>
         <span class="c"># Return a JSON encoded error response.</span>
         <span class="k">return</span> <span class="n">authenticator</span><span class="o">.</span><span class="n">error_response</span><span class="p">()</span>
-    <span class="c"># Return a JSON encoded success response.</span>
-    <span class="k">return</span> <span class="n">authenticator</span><span class="o">.</span><span class="n">grant_response</span><span class="p">({</span><span class="s">&quot;email&quot;</span><span class="p">:</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">email</span><span class="p">})</span>
+    <span class="n">username</span> <span class="o">=</span> <span class="n">authenticator</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">userame</span>
+    <span class="c"># Return a JSON encoded response.</span>
+    <span class="k">return</span> <span class="n">authenticator</span><span class="o">.</span><span class="n">response</span><span class="p">({</span><span class="s">&quot;username&quot;</span><span class="p">:</span><span class="n">username</span><span class="p">})</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="examples">
 <h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
-<p>An <a class="reference external" href="https://github.com/hiidef/oauth2app/tree/develop/examples/mysite">example Django project</a> demonstrating client and server functionality is available in the project repository.</p>
+<p>An <a class="reference external" href="https://github.com/hiidef/oauth2app/tree/develop/examples/mysite">example Django project</a> demonstrating client and server functionality is available in the repository.</p>
 <p><a class="reference external" href="https://github.com/hiidef/oauth2app/tree/develop/examples/mysite">https://github.com/hiidef/oauth2app/tree/develop/examples/mysite</a></p>
 </div>
 <div class="section" id="usage">
@@ -197,6 +214,7 @@ is registered as an application.</p>
 <li class="toctree-l1"><a class="reference internal" href="authenticate.html">Authentication</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="authenticate.html#authenticator">Authenticator</a></li>
 <li class="toctree-l2"><a class="reference internal" href="authenticate.html#module-oauth2app.authenticate">Module Reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="authenticate.html#to-do">To Do</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="token.html">Access Token Generation</a><ul>
@@ -224,6 +242,19 @@ is registered as an application.</p>
 </ul>
 </div>
 </div>
+<div class="section" id="to-do">
+<h2>To Do<a class="headerlink" href="#to-do" title="Permalink to this headline">¶</a></h2>
+<div class="admonition-todo admonition " id="index-0">
+<p class="first admonition-title">Todo</p>
+<p class="last">MAC Authentication</p>
+</div>
+<p class="todo-source">(The <a class="reference internal" href="authenticate.html#index-0"><em>original entry</em></a> is located in  authenticate.rst, line 62.)</p>
+<div class="admonition-todo admonition " id="index-1">
+<p class="first admonition-title">Todo</p>
+<p class="last">Check for access token expiration</p>
+</div>
+<p class="todo-source">(The <a class="reference internal" href="authenticate.html#index-1"><em>original entry</em></a> is located in  authenticate.rst, line 65.)</p>
+</div>
 </div>
 
 
@@ -242,6 +273,7 @@ is registered as an application.</p>
 <li><a class="reference internal" href="#usage">Usage</a><ul>
 </ul>
 </li>
+<li><a class="reference internal" href="#to-do">To Do</a></li>
 </ul>
 </li>
 </ul>
