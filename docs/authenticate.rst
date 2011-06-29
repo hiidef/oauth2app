@@ -27,6 +27,9 @@ the appropriate OAuth2 headers. ::
         username = authenticator.user.username
         return HttpResponse(content="Hi %s, You authenticated!" % username)
 
+JSONAuthenticator
+-----------------
+
 The JSONAuthenticator adds convenience methods and supports an optional callback request parameter
 for use with JSONP requests. 
 
