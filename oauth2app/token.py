@@ -114,6 +114,7 @@ class TokenGenerator(object):
         # refresh_token, see 6.  Refreshing an Access Token
         self.refresh_token = request.REQUEST.get('refresh_token')
         # password, see 4.3.2. Access Token Request
+        self.email = request.REQUEST.get('email')
         self.username = request.REQUEST.get('username')
         self.password = request.REQUEST.get('password')
         self.callback = request.REQUEST.get('callback')
@@ -199,7 +200,7 @@ class TokenGenerator(object):
 
     def _validate_password(self):
         """Validate a password request."""
-        if self.username is None:
+        if self.username is None and self.email is None:
             raise InvalidRequest('No username')
         if self.password is None:
             raise InvalidRequest('No password')  
@@ -224,7 +225,10 @@ class TokenGenerator(object):
                 raise InvalidClient('Client authentication failed.')
         else:
             raise InvalidClient('Client authentication failed.')
-        user = authenticate(username=self.username, password=self.password)
+        if self.username is not None:
+            user = authenticate(username=self.username, password=self.password)
+        else:
+            user = authenticate(email=self.email, password=self.password)
         if user is not None:
             if not user.is_active:
                 raise InvalidRequest('Inactive user.')
@@ -246,8 +250,8 @@ class TokenGenerator(object):
             scopes = set(self.scope.split())
             new_scope = scopes - access_ranges
             if len(new_scope) > 0:
-                raise InvalidScope("""Refresh request requested scopes beyond
-                initial grant: %s""" % new_scope)
+                raise InvalidScope("Refresh request requested scopes beyond"
+                "initial grant: %s" % new_scope)
     
     def error_response(self):
         """In the event of an error, return a Django HttpResponseBadRequest

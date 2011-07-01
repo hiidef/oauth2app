@@ -1,5 +1,5 @@
 from setuptools import setup, find_packages
-# Also requires python-dev and python-openssl
+
 setup(
 
     name = "oauth2app",
