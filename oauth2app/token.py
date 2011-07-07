@@ -2,7 +2,7 @@
 
 
 from base64 import b64encode, b64decode
-from django.http import HttpResponseBadRequest, HttpResponse
+from django.http import HttpResponse
 from django.contrib import auth
 from django.contrib.auth import authenticate
 from django.views.decorators.csrf import csrf_exempt
@@ -117,6 +117,7 @@ class TokenGenerator(object):
         self.email = request.REQUEST.get('email')
         self.username = request.REQUEST.get('username')
         self.password = request.REQUEST.get('password')
+        # Optional json callback
         self.callback = request.REQUEST.get('callback')
         self.request = request
 
@@ -192,6 +193,9 @@ class TokenGenerator(object):
             self.code = Code.objects.get(key=self.code_key)
         except Code.DoesNotExist:
             raise InvalidRequest('No such code: %s' % self.code_key)
+        now = TimestampGenerator()()
+        if self.code.expire < now:
+            raise InvalidGrant("Provided code is expired")
         self.scope = ' '.join([x.key for x in self.code.scope.all()])
         if self.redirect_uri is None:
             raise InvalidRequest('No redirect_uri')
@@ -254,10 +258,10 @@ class TokenGenerator(object):
                 "initial grant: %s" % new_scope)
 
     def error_response(self):
-        """In the event of an error, return a Django HttpResponseBadRequest
+        """In the event of an error, return a Django HttpResponse
         with the appropriate JSON encoded error parameters.
 
-        *Returns HttpResponseBadRequest*"""
+        *Returns HttpResponse*"""
         if self.error is not None:
             e = self.error
         else:
@@ -270,9 +274,14 @@ class TokenGenerator(object):
                 content=json_data,
                 content_type='application/json')
         else:
-            return HttpResponseBadRequest(
+            response = HttpResponse(
                 content=json_data,
                 content_type='application/json')
+            if isinstance(self.error, InvalidClient):
+                response.status_code = 401
+            else:
+                response.status_code = 400
+            return response
 
     def grant_response(self):
         """Returns a JSON formatted authorization code."""
