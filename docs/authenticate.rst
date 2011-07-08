@@ -65,5 +65,3 @@ To Do
 .. todo::
    MAC Authentication
    
-.. todo::
-   Check for access token expiration
