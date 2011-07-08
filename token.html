@@ -146,9 +146,8 @@ username/password pairs, and generates a JSON formatted authorization code.</p>
 <ul class="simple">
 <li><em>scope:</em> An iterable of oauth2app.models.AccessRange objects representing
 the scope the token generator will grant. <em>Default None</em></li>
-<li><em>authentication_method:</em> Accepted authentication methods. Possible
-values are: oauth2app.consts.MAC, oauth2app.consts.BEARER, 
-oauth2app.consts.MAC | oauth2app.consts.BEARER, 
+<li><em>authentication_method:</em> Type of token to generate. Possible
+values are: oauth2app.consts.MAC and oauth2app.consts.BEARER
 <em>Default oauth2app.consts.BEARER</em></li>
 <li><em>refreshable:</em> Boolean value indicating whether issued tokens are 
 refreshable. <em>Default True</em></li>

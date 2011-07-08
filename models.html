@@ -149,6 +149,11 @@ refreshable. <em>Default False</em></li>
 <dd></dd></dl>
 
 <dl class="attribute">
+<dt id="oauth2app.models.AccessToken.macnonce_set">
+<tt class="descclassname">AccessToken.</tt><tt class="descname">macnonce_set</tt><a class="headerlink" href="#oauth2app.models.AccessToken.macnonce_set" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
 <dt id="oauth2app.models.AccessToken.scope">
 <tt class="descclassname">AccessToken.</tt><tt class="descname">scope</tt><a class="headerlink" href="#oauth2app.models.AccessToken.scope" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -271,6 +276,32 @@ requesting client when the code was issued. <em>Default None</em></li>
 <li><em>length:</em> A integer indicating how long the key should be.</li>
 </ul>
 <p><em>Returns str</em></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="oauth2app.models.MACNonce">
+<em class="property">class </em><tt class="descclassname">oauth2app.models.</tt><tt class="descname">MACNonce</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#oauth2app.models.MACNonce" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stores Nonce strings for use with MAC Authentication.</p>
+<p><strong>Args:</strong></p>
+<ul class="simple">
+<li><em>access_token:</em> A oauth2app.models.AccessToken object</li>
+<li><em>nonce:</em> A unique nonce string.</li>
+</ul>
+<dl class="exception">
+<dt id="oauth2app.models.MACNonce.DoesNotExist">
+<em class="property">exception </em><tt class="descname">DoesNotExist</tt><a class="headerlink" href="#oauth2app.models.MACNonce.DoesNotExist" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="exception">
+<dt id="oauth2app.models.MACNonce.MultipleObjectsReturned">
+<em class="property">exception </em><tt class="descclassname">MACNonce.</tt><tt class="descname">MultipleObjectsReturned</tt><a class="headerlink" href="#oauth2app.models.MACNonce.MultipleObjectsReturned" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="oauth2app.models.MACNonce.access_token">
+<tt class="descclassname">MACNonce.</tt><tt class="descname">access_token</tt><a class="headerlink" href="#oauth2app.models.MACNonce.access_token" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="class">
