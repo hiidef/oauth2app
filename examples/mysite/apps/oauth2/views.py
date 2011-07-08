@@ -31,7 +31,11 @@ def authorize(request):
         # redirects to the provided redirect URL.
         return authorizer.error_redirect()
     if request.method == 'GET':
-        template = {}
+        # Make sure the authorizer has validated before requesting the client
+        # or access_ranges as otherwise they will be None.
+        template = {
+            "client":authorizer.client, 
+            "access_ranges":authorizer.access_ranges}
         template["form"] = AuthorizeForm()
         helper = FormHelper()
         no_submit = Submit('connect','No')

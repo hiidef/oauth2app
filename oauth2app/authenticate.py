@@ -12,7 +12,6 @@ from .exceptions import OAuth2Exception
 from .models import AccessToken, AccessRange, TimestampGenerator
 from .consts import REALM, AUTHENTICATION_METHOD, MAC, BEARER
 
-
 class AuthenticationException(OAuth2Exception):
     """Authentication exception base class."""
     pass
@@ -48,11 +47,14 @@ class Authenticator(object):
 
     **Kwargs:**
 
-    * *scope:* A iterable of oauth2app.models.AccessRange objects.
-
+    * *scope:* An iterable of oauth2app.models.AccessRange objects representing
+      the scope the authenticator will authenticate.
+      *Default None*
     * *authentication_method:* Accepted authentication methods. Possible
       values are: oauth2app.consts.MAC, oauth2app.consts.BEARER, 
-      oauth2app.consts.MAC | oauth2app.consts.BEARER
+      oauth2app.consts.MAC | oauth2app.consts.BEARER, 
+      *Default oauth2app.consts.BEARER*
+
     """
 
     valid = False
@@ -120,8 +122,8 @@ class Authenticator(object):
             token_scope = set([x.key for x in self.access_token.scope.all()])
             new_scope = self.authorized_scope - token_scope
             if len(new_scope) > 0:
-                raise InsufficientScope(("Access token has insufficient"
-                    "scope: %s") % list(self.authorized_scope))
+                raise InsufficientScope(("Access token has insufficient "
+                    "scope: %s") % ','.join(self.authorized_scope))
         now = TimestampGenerator()()
         if self.access_token.expire < now:
             raise InvalidToken("Token is expired")

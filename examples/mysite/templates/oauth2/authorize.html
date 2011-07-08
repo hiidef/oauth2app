@@ -1,14 +1,29 @@
 {% extends "layout.html" %}
 {% load uni_form_tags %}
 
-{% block title %}Authorize{% endblock %}
+{% block title %}Authorize “{{ client.name }}”{% endblock %}
 
 {% block content %}
 
 	<h1>Authorize</h1>
 
 	<div class="content_container">
-		<p>Grant BLAH access to the following parts of your account?</p>
+		<p>Grant “{{ client.name }}” access to {% if access_ranges %}the following parts of{% endif %} your account?</p>
+		{% if access_ranges %}
+		<table class="data">
+			<tr>
+				<th>Key</th>
+				<th>Description</th>
+			</tr>		
+			{% for access_range in access_ranges %}
+			<tr>
+				<td>{{ access_range.key }}</td>
+				<td>{{ access_range.description }}</td>
+			</tr>
+			{% endfor %}
+		</table>
+		<p>This allows “{{ client.name }}” to access parts of your sample application user account using authenticated OAuth 2.0 requests.</p>
+		{% endif %}
 	</div>
 	
 	<div class="form_container">

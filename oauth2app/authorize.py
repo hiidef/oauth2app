@@ -10,7 +10,7 @@ from .exceptions import OAuth2Exception
 from .models import Client, AccessRange, Code, AccessToken, KeyGenerator
 from .lib.response import RESPONSE_TYPES, TOKEN, CODE, CODE_AND_TOKEN
 from .lib.response import is_valid_response_type
-from .consts import ACCESS_TOKEN_EXPIRATION
+from .consts import ACCESS_TOKEN_EXPIRATION, REFRESHABLE
 from .consts import AUTHENTICATION_METHOD, MAC, BEARER, MAC_KEY_LENGTH
 from .lib.uri import add_parameters, add_fragments, normalize
 
@@ -85,13 +85,17 @@ class Authorizer(object):
 
     **Kwargs:**
 
-    * *scope:* An iterable of oauth2app.models.AccessRange objects.
-
+    * *scope:* An iterable of oauth2app.models.AccessRange objects representing
+      the scope the authorizer can grant. *Default None*
     * *authentication_method:* Accepted authentication methods. Possible
       values are: oauth2app.consts.MAC, oauth2app.consts.BEARER, 
-      oauth2app.consts.MAC | oauth2app.consts.BEARER
+      oauth2app.consts.MAC | oauth2app.consts.BEARER, 
+      *Default oauth2app.consts.BEARER*
+    * *refreshable:* Boolean value indicating whether issued tokens are 
+      refreshable. *Default True*
     """
     client = None
+    access_ranges = None
     valid = False
     error = None
     
@@ -99,7 +103,9 @@ class Authorizer(object):
             self, 
             request, 
             scope=None,
-            authentication_method=AUTHENTICATION_METHOD):
+            authentication_method=AUTHENTICATION_METHOD,
+            refreshable=REFRESHABLE):
+        self.refreshable = refreshable
         if authentication_method not in [BEARER, MAC, BEARER | MAC]:
             raise OAuth2Exception("Possible values for authentication_method" 
                 " are oauth2app.consts.MAC, oauth2app.consts.BEARER, "
@@ -172,8 +178,8 @@ class Authorizer(object):
         if self.authorized_scope is not None and self.scope is None:
             self.scope = self.authorized_scope
         if self.scope is not None:
-            access_ranges = AccessRange.objects.filter(key__in=self.scope)
-            access_ranges = set(access_ranges.values_list('key', flat=True))
+            self.access_ranges = AccessRange.objects.filter(key__in=self.scope)
+            access_ranges = set(self.access_ranges.values_list('key', flat=True))
             difference = access_ranges.symmetric_difference(self.scope)
             if len(difference) != 0:
                 raise InvalidScope("Following access ranges do not "
@@ -181,8 +187,8 @@ class Authorizer(object):
             if self.authorized_scope is not None:
                 new_scope = self.scope - self.authorized_scope
                 if len(new_scope) > 0:
-                    raise InvalidScope("Invalid scope: %s" % list(new_scope))
-                    
+                    raise InvalidScope("Invalid scope: %s" % ','.join(new_scope))
+
     def _check_redirect_uri(self):
         """Raise MissingRedirectURI if no redirect_uri is available."""
         if self.redirect_uri is None:
@@ -226,7 +232,7 @@ class Authorizer(object):
         if self.state is not None:
             parameters["state"] = self.state
         if self.scope is not None:
-            parameters["scope"] = self.scope        
+            parameters["scope"] = ' '.join(self.scope)     
         return urlencode(parameters)
     
     query_string = property(_query_string)
@@ -264,6 +270,8 @@ class Authorizer(object):
                     client=self.client)
                 access_token.scope = access_ranges
                 fragments['access_token'] = access_token.token
+                if access_token.refreshable:
+                    fragments['refresh_token'] = access_token.refresh_token
                 fragments['expires_in'] = ACCESS_TOKEN_EXPIRATION
                 fragments['scope'] = self.scope
                 if self.authentication_method & MAC != 0:
