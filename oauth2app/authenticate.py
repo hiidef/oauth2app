@@ -4,6 +4,7 @@
 """OAuth 2.0 Authentication"""
 
 
+from hashlib import sha256
 from urlparse import parse_qsl
 from simplejson import dumps
 from django.conf import settings
@@ -11,6 +12,7 @@ from django.http import HttpResponse
 from .exceptions import OAuth2Exception
 from .models import AccessToken, AccessRange, TimestampGenerator
 from .consts import REALM, AUTHENTICATION_METHOD, MAC, BEARER
+
 
 class AuthenticationException(OAuth2Exception):
     """Authentication exception base class."""
@@ -86,6 +88,8 @@ class Authenticator(object):
             auth = self.request.META["HTTP_AUTHORIZATION"].split()
             self.auth_type = auth[0].lower()
             self.auth_value = " ".join(auth[1:]).strip()
+        self.request_hostname = self.request.META.get("REMOTE_HOST")
+        self.request_port = self.request.META.get("SERVER_PORT")
 
     def validate(self):
         """Validate the request. Raises an AuthenticationException if the
@@ -137,12 +141,48 @@ class Authenticator(object):
         except AccessToken.DoesNotExist:
             raise InvalidToken("Token doesn't exist")
 
-    def _validate_mac(self, auth):
+    def _validate_mac(self, mac_header):
         """Validate MAC authentication. Not implemented."""
         if self.authentication_method & MAC == 0:
             raise InvalidToken("MAC authentication is not supported.")
-        auth = parse_qsl(auth.replace(",","&").replace('"', ''))
-        auth = dict([(x[0].strip(), x[1].strip()) for x in auth])
+        mac_header = parse_qsl(mac_header.replace(",","&").replace('"', ''))
+        mac_header = dict([(x[0].strip(), x[1].strip()) for x in mac_header])
+        for parameter in ["id", "nonce", "mac"]
+            if "parameter" not in mac_header:
+                raise InvalidToken("MAC Authorization header does not contain"
+                    " required parameter '%s'" % parameter)
+        if "bodyhash" in mac_header:
+            bodyhash = mac_header["bodyhash"]
+        else:
+            bodyhash = ""
+        if "ext" in mac_header:
+            ext = mac_header["ext"]
+        else:
+            ext = ""
+        if self.request_hostname is None:
+            raise InvalidRequest("Request does not contain a hostname.")
+        if self.request_port is None:
+            raise InvalidRequest("Request does not contain a port.")
+        nonce_timestamp, nonce_string = mac_header["nonce"].split(":")
+        mac = sha256("\n".join([
+            mac_header["nonce"], # The nonce value generated for the request
+            self.request.method.upper(), # The HTTP request method 
+            "XXX", # The HTTP request-URI
+            self.request_hostname, # The hostname included in the HTTP request
+            self.request_port, # The port as included in the HTTP request
+            bodyhash,
+            ext]).hexdigest()
+        # Todo:
+        # 1.  Recalculate the request body hash (if included in the request) as
+        # described in Section 3.2 and request MAC as described in
+        # Section 3.3 and compare the request MAC to the value received
+        # from the client via the "mac" attribute.
+        # 2.  Ensure that the combination of nonce and MAC key identifier
+        # received from the client has not been used before in a previous
+        # request (the server MAY reject requests with stale timestamps;
+        # the determination of staleness is left up to the server to
+        # define).
+        # 3.  Verify the scope and validity of the MAC credentials.
         raise NotImplementedError()
 
     def _get_user(self):

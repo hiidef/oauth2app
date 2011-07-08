@@ -87,9 +87,8 @@ class Authorizer(object):
 
     * *scope:* An iterable of oauth2app.models.AccessRange objects representing
       the scope the authorizer can grant. *Default None*
-    * *authentication_method:* Accepted authentication methods. Possible
-      values are: oauth2app.consts.MAC, oauth2app.consts.BEARER, 
-      oauth2app.consts.MAC | oauth2app.consts.BEARER, 
+    * *authentication_method:* Type of token to generate. Possible
+      values are: oauth2app.consts.MAC and oauth2app.consts.BEARER
       *Default oauth2app.consts.BEARER*
     * *refreshable:* Boolean value indicating whether issued tokens are 
       refreshable. *Default True*
@@ -106,10 +105,9 @@ class Authorizer(object):
             authentication_method=AUTHENTICATION_METHOD,
             refreshable=REFRESHABLE):
         self.refreshable = refreshable
-        if authentication_method not in [BEARER, MAC, BEARER | MAC]:
+        if authentication_method not in [BEARER, MAC]:
             raise OAuth2Exception("Possible values for authentication_method" 
-                " are oauth2app.consts.MAC, oauth2app.consts.BEARER, "
-                "oauth2app.consts.MAC | oauth2app.consts.BEARER")
+                " are oauth2app.consts.MAC and oauth2app.consts.BEARER")
         self.authentication_method = authentication_method
         if scope is None:
             self.authorized_scope = None
@@ -274,10 +272,13 @@ class Authorizer(object):
                     fragments['refresh_token'] = access_token.refresh_token
                 fragments['expires_in'] = ACCESS_TOKEN_EXPIRATION
                 fragments['scope'] = self.scope
-                if self.authentication_method & MAC != 0:
+                if self.authentication_method == MAC:
                     access_token.mac_key = KeyGenerator(MAC_KEY_LENGTH)()
                     fragments["mac_key"] = access_token.mac_key
                     fragments["mac_algorithm"] = "hmac-sha-256"
+                    fragments["token_type"] = "mac"
+                elif self.authentication_method == BEARER:
+                    fragments["token_type"] = "bearer"
                 access_token.save()
             if self.state is not None:
                 parameters['state'] = self.state

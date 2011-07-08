@@ -100,9 +100,8 @@ class TokenGenerator(object):
 
     * *scope:* An iterable of oauth2app.models.AccessRange objects representing
       the scope the token generator will grant. *Default None*
-    * *authentication_method:* Accepted authentication methods. Possible
-      values are: oauth2app.consts.MAC, oauth2app.consts.BEARER, 
-      oauth2app.consts.MAC | oauth2app.consts.BEARER, 
+    * *authentication_method:* Type of token to generate. Possible
+      values are: oauth2app.consts.MAC and oauth2app.consts.BEARER
       *Default oauth2app.consts.BEARER*
     * *refreshable:* Boolean value indicating whether issued tokens are 
       refreshable. *Default True*
@@ -122,10 +121,9 @@ class TokenGenerator(object):
             authentication_method=AUTHENTICATION_METHOD,
             refreshable=REFRESHABLE):
         self.refreshable = refreshable
-        if authentication_method not in [BEARER, MAC, BEARER | MAC]:
+        if authentication_method not in [BEARER, MAC]:
             raise OAuth2Exception("Possible values for authentication_method" 
-                " are oauth2app.consts.MAC, oauth2app.consts.BEARER, "
-                "oauth2app.consts.MAC | oauth2app.consts.BEARER")
+                " are oauth2app.consts.MAC and oauth2app.consts.BEARER")
         self.authentication_method = authentication_method
         if scope is None:
             self.authorized_scope = None
@@ -338,9 +336,12 @@ class TokenGenerator(object):
         data = {
             'access_token': access_token.token,
             'expire_in': ACCESS_TOKEN_EXPIRATION}
-        if self.authentication_method & MAC != 0:
+        if self.authentication_method == MAC:
+            data["token_type"] = "mac"
             data["mac_key"] = access_token.mac_key
             data["mac_algorithm"] = "hmac-sha-256"
+        elif self.authentication_method == BEARER:
+            data["token_type"] = "bearer"
         if access_token.refreshable:
             data['refresh_token'] = access_token.refresh_token
         if self.scope:
@@ -360,7 +361,7 @@ class TokenGenerator(object):
             user=self.code.user,
             client=self.client,
             refreshable=self.refreshable)
-        if self.authentication_method & MAC != 0:
+        if self.authentication_method == MAC:
             access_token.mac_key = KeyGenerator(MAC_KEY_LENGTH)()
         access_ranges = list(AccessRange.objects.filter(key__in=self.scope))
         access_token.scope = access_ranges
@@ -374,7 +375,7 @@ class TokenGenerator(object):
             user=self.user,
             client=self.client,
             refreshable=self.refreshable)
-        if self.authentication_method & MAC != 0:
+        if self.authentication_method == MAC:
             access_token.mac_key = KeyGenerator(MAC_KEY_LENGTH)()
         access_ranges = list(AccessRange.objects.filter(key__in=self.scope))
         access_token.scope = access_ranges
@@ -396,7 +397,7 @@ class TokenGenerator(object):
             user=self.client.user,
             client=self.client,
             refreshable=self.refreshable)
-        if self.authentication_method & MAC != 0:
+        if self.authentication_method == MAC:
             access_token.mac_key = KeyGenerator(MAC_KEY_LENGTH)()
         access_ranges = list(AccessRange.objects.filter(key__in=self.scope))
         self.access_token.scope = access_ranges

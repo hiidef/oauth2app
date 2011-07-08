@@ -41,9 +41,8 @@ AUTHENTICATION_METHOD = getattr(
     settings, 
     "OAUTH2_AUTHENTICATION_METHOD", 
     BEARER)
-if AUTHENTICATION_METHOD not in [BEARER, MAC, BEARER | MAC]:
+if AUTHENTICATION_METHOD not in [BEARER, MAC]:
     raise OAuth2Exception("Possible values for OAUTH2_AUTHENTICATION_METHOD "
-        "are oauth2app.consts.MAC, oauth2app.consts.BEARER, "
-        "oauth2app.consts.MAC | oauth2app.consts.BEARER")
+        "are oauth2app.consts.MAC and oauth2app.consts.BEARER")
 # Authentication realm
 REALM = getattr(settings, "OAUTH2_REALM", "")

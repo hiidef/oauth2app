@@ -193,4 +193,14 @@ class Code(models.Model):
     redirect_uri = models.URLField(null=True, blank=True)
     scope = models.ManyToManyField(AccessRange)
     
+class MACNonce(models.Model):
+    """Stores Nonce strings for use with MAC Authentication.
 
+    **Args:**
+    
+    * *access_token:* A oauth2app.models.AccessToken object
+    * *nonce:* A unique nonce string.
+    
+    """
+    access_token = models.ForeignKey(AccessToken)
+    nonce = models.CharField(max_length=30, db_index=True)
