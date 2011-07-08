@@ -74,6 +74,7 @@
 <h1>Models<a class="headerlink" href="#models" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="module-oauth2app.models">
 <span id="module-reference"></span><h2>Module Reference<a class="headerlink" href="#module-oauth2app.models" title="Permalink to this headline">¶</a></h2>
+<p>OAuth 2.0 Django Models</p>
 <dl class="class">
 <dt id="oauth2app.models.AccessRange">
 <em class="property">class </em><tt class="descclassname">oauth2app.models.</tt><tt class="descname">AccessRange</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/oauth2app/models.html#AccessRange"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.models.AccessRange" title="Permalink to this definition">¶</a></dt>
@@ -125,6 +126,7 @@ token requests.</li>
 character random string</em></li>
 <li><em>refresh_token:</em> A string representing the access key token. <em>Default 10 
 character random string</em></li>
+<li><em>mac_key:</em> A string representing the MAC key. <em>Default None</em></li>
 <li><em>expire:</em> A positive integer timestamp representing the access token&#8217;s 
 expiration time.</li>
 <li><em>scope:</em> A list of oauth2app.models.AccessRange objects. <em>Default None</em></li>

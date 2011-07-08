@@ -122,6 +122,7 @@ return a redirect response to the client&#8217;s redirect_uri with information o
 </div>
 <div class="section" id="module-oauth2app.authorize">
 <span id="module-reference"></span><h2>Module Reference<a class="headerlink" href="#module-oauth2app.authorize" title="Permalink to this headline">¶</a></h2>
+<p>OAuth 2.0 Authorization</p>
 <dl class="exception">
 <dt id="oauth2app.authorize.AccessDenied">
 <em class="property">exception </em><tt class="descclassname">oauth2app.authorize.</tt><tt class="descname">AccessDenied</tt><a class="reference internal" href="_modules/oauth2app/authorize.html#AccessDenied"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.authorize.AccessDenied" title="Permalink to this definition">¶</a></dt>
@@ -137,7 +138,7 @@ request.</p>
 
 <dl class="class">
 <dt id="oauth2app.authorize.Authorizer">
-<em class="property">class </em><tt class="descclassname">oauth2app.authorize.</tt><tt class="descname">Authorizer</tt><big>(</big><em>request</em>, <em>scope=None</em><big>)</big><a class="reference internal" href="_modules/oauth2app/authorize.html#Authorizer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.authorize.Authorizer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">oauth2app.authorize.</tt><tt class="descname">Authorizer</tt><big>(</big><em>request</em>, <em>scope=None</em>, <em>authentication_method=1</em>, <em>refreshable=True</em><big>)</big><a class="reference internal" href="_modules/oauth2app/authorize.html#Authorizer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.authorize.Authorizer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Access authorizer. Validates access credentials and generates
 a response with an authorization code passed as a parameter to the
 redirect URI, an access token passed as a URI fragment to the redirect
@@ -148,7 +149,14 @@ URI, or both.</p>
 </ul>
 <p><strong>Kwargs:</strong></p>
 <ul class="simple">
-<li><em>scopes:</em> A iterable of oauth2app.models.AccessRange objects.</li>
+<li><em>scope:</em> An iterable of oauth2app.models.AccessRange objects representing
+the scope the authorizer can grant. <em>Default None</em></li>
+<li><em>authentication_method:</em> Accepted authentication methods. Possible
+values are: oauth2app.consts.MAC, oauth2app.consts.BEARER, 
+oauth2app.consts.MAC | oauth2app.consts.BEARER, 
+<em>Default oauth2app.consts.BEARER</em></li>
+<li><em>refreshable:</em> Boolean value indicating whether issued tokens are 
+refreshable. <em>Default True</em></li>
 </ul>
 <dl class="method">
 <dt id="oauth2app.authorize.Authorizer.error_redirect">

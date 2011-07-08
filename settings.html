@@ -93,6 +93,15 @@
 <p>Length of the code key.</p>
 <p><em>Default 30</em></p>
 </div>
+<div class="section" id="mac-key-length">
+<h2>MAC Key Length<a class="headerlink" href="#mac-key-length" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">OAUTH2_MAC_KEY_LENGTH</span>
+</pre></div>
+</div>
+<p>Length of the MAC authentication key. Only used when the authentication method
+is set to oauth2app.consts.MAC. See <a class="reference internal" href="#authentication-method"><em>Authentication method</em></a>.</p>
+<p><em>Default 20</em></p>
+</div>
 <div class="section" id="access-token-length">
 <h2>Access Token Length<a class="headerlink" href="#access-token-length" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">OAUTH2_ACCESS_TOKEN_LENGTH</span>
@@ -133,13 +142,18 @@
 <p>Number of seconds in which an access token should expire.</p>
 <p><em>Default 3600</em></p>
 </div>
-<div class="section" id="mac-authentication">
-<h2>MAC Authentication<a class="headerlink" href="#mac-authentication" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">OAUTH2_MAC_KEY</span>
+<div class="section" id="authentication-method">
+<span id="id1"></span><h2>Authentication method<a class="headerlink" href="#authentication-method" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">OAUTH2_AUTHENTICATION_METHOD</span>
 </pre></div>
 </div>
-<p>Send MAC style authentication parameters. See <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-oauth-v2-http-mac-00">http://tools.ietf.org/html/draft-ietf-oauth-v2-http-mac-00</a></p>
-<p><em>Default True</em></p>
+<p>Authentication method. Possible values are oauth2app.consts.MAC,
+oauth2app.consts.BEARER, or (oauth2app.consts.MAC | oauth2app.consts.BEARER)
+to indicate both methods are acceptable.</p>
+<p>For Bearer see <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-oauth-saml2-bearer-03">http://tools.ietf.org/html/draft-ietf-oauth-saml2-bearer-03</a>
+and <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-oauth-v2-bearer-04">http://tools.ietf.org/html/draft-ietf-oauth-v2-bearer-04</a></p>
+<p>For MAC see <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-oauth-v2-http-mac-00">http://tools.ietf.org/html/draft-ietf-oauth-v2-http-mac-00</a></p>
+<p><em>Default oauth2app.consts.BEARER</em></p>
 </div>
 <div class="section" id="realm">
 <h2>Realm<a class="headerlink" href="#realm" title="Permalink to this headline">¶</a></h2>
@@ -164,12 +178,13 @@
 <li><a class="reference internal" href="#client-key-length">Client Key Length</a></li>
 <li><a class="reference internal" href="#client-secret-length">Client Secret Length</a></li>
 <li><a class="reference internal" href="#code-key-length">Code Key Length</a></li>
+<li><a class="reference internal" href="#mac-key-length">MAC Key Length</a></li>
 <li><a class="reference internal" href="#access-token-length">Access Token Length</a></li>
 <li><a class="reference internal" href="#refresh-token-length">Refresh Token Length</a></li>
 <li><a class="reference internal" href="#refreshable-tokens">Refreshable Tokens</a></li>
 <li><a class="reference internal" href="#authorization-code-expiration">Authorization Code Expiration</a></li>
 <li><a class="reference internal" href="#access-token-expiration">Access Token Expiration</a></li>
-<li><a class="reference internal" href="#mac-authentication">MAC Authentication</a></li>
+<li><a class="reference internal" href="#authentication-method">Authentication method</a></li>
 <li><a class="reference internal" href="#realm">Realm</a></li>
 </ul>
 </li>

@@ -93,6 +93,7 @@ grant types, specified through the grant_type request parameter.</p>
 </div>
 <div class="section" id="module-oauth2app.token">
 <span id="module-reference"></span><h2>Module Reference<a class="headerlink" href="#module-oauth2app.token" title="Permalink to this headline">¶</a></h2>
+<p>OAuth 2.0 Token Generation</p>
 <dl class="exception">
 <dt id="oauth2app.token.AccessTokenException">
 <em class="property">exception </em><tt class="descclassname">oauth2app.token.</tt><tt class="descname">AccessTokenException</tt><a class="reference internal" href="_modules/oauth2app/token.html#AccessTokenException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.token.AccessTokenException" title="Permalink to this definition">¶</a></dt>
@@ -134,19 +135,30 @@ exceeds the scope granted by the resource owner.</p>
 
 <dl class="class">
 <dt id="oauth2app.token.TokenGenerator">
-<em class="property">class </em><tt class="descclassname">oauth2app.token.</tt><tt class="descname">TokenGenerator</tt><big>(</big><em>request</em>, <em>scope=None</em><big>)</big><a class="reference internal" href="_modules/oauth2app/token.html#TokenGenerator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.token.TokenGenerator" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">oauth2app.token.</tt><tt class="descname">TokenGenerator</tt><big>(</big><em>request</em>, <em>scope=None</em>, <em>authentication_method=1</em>, <em>refreshable=True</em><big>)</big><a class="reference internal" href="_modules/oauth2app/token.html#TokenGenerator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.token.TokenGenerator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Token access handler. Validates authorization codes, refresh tokens,
 username/password pairs, and generates a JSON formatted authorization code.</p>
 <p><strong>Args:</strong></p>
 <ul class="simple">
 <li><em>request:</em> Django HttpRequest object.</li>
 </ul>
+<p><strong>Kwargs:</strong></p>
+<ul class="simple">
+<li><em>scope:</em> An iterable of oauth2app.models.AccessRange objects representing
+the scope the token generator will grant. <em>Default None</em></li>
+<li><em>authentication_method:</em> Accepted authentication methods. Possible
+values are: oauth2app.consts.MAC, oauth2app.consts.BEARER, 
+oauth2app.consts.MAC | oauth2app.consts.BEARER, 
+<em>Default oauth2app.consts.BEARER</em></li>
+<li><em>refreshable:</em> Boolean value indicating whether issued tokens are 
+refreshable. <em>Default True</em></li>
+</ul>
 <dl class="method">
 <dt id="oauth2app.token.TokenGenerator.error_response">
 <tt class="descname">error_response</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/oauth2app/token.html#TokenGenerator.error_response"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.token.TokenGenerator.error_response" title="Permalink to this definition">¶</a></dt>
-<dd><p>In the event of an error, return a Django HttpResponseBadRequest
+<dd><p>In the event of an error, return a Django HttpResponse
 with the appropriate JSON encoded error parameters.</p>
-<p><em>Returns HttpResponseBadRequest</em></p>
+<p><em>Returns HttpResponse</em></p>
 </dd></dl>
 
 <dl class="method">
@@ -158,7 +170,7 @@ with the appropriate JSON encoded error parameters.</p>
 <dl class="method">
 <dt id="oauth2app.token.TokenGenerator.validate">
 <tt class="descname">validate</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/oauth2app/token.html#TokenGenerator.validate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.token.TokenGenerator.validate" title="Permalink to this definition">¶</a></dt>
-<dd><p>Validate the request. Raises an AccessTokenException if the 
+<dd><p>Validate the request. Raises an AccessTokenException if the
 request fails authorization.</p>
 <p><em>Returns None</em></p>
 </dd></dl>
@@ -188,7 +200,7 @@ authorization server.</p>
 <dl class="function">
 <dt id="oauth2app.token.handler">
 <tt class="descclassname">oauth2app.token.</tt><tt class="descname">handler</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/oauth2app/token.html#handler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.token.handler" title="Permalink to this definition">¶</a></dt>
-<dd><p>Django view that handles the token endpoint. Returns a JSON formatted 
+<dd><p>Django view that handles the token endpoint. Returns a JSON formatted
 authorization code.</p>
 <p><strong>Args:</strong></p>
 <ul class="simple">
