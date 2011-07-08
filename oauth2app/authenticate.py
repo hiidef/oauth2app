@@ -1,13 +1,16 @@
 #-*- coding: utf-8 -*-
 
 
+"""OAuth 2.0 Authentication"""
+
+
 from urlparse import parse_qsl
 from simplejson import dumps
 from django.conf import settings
 from django.http import HttpResponse
 from .exceptions import OAuth2Exception
 from .models import AccessToken, AccessRange, TimestampGenerator
-from .consts import REALM
+from .consts import REALM, AUTHENTICATION_METHOD, MAC, BEARER
 
 
 class AuthenticationException(OAuth2Exception):
@@ -46,6 +49,10 @@ class Authenticator(object):
     **Kwargs:**
 
     * *scope:* A iterable of oauth2app.models.AccessRange objects.
+
+    * *authentication_method:* Accepted authentication methods. Possible
+      values are: oauth2app.consts.MAC, oauth2app.consts.BEARER, 
+      oauth2app.consts.MAC | oauth2app.consts.BEARER
     """
 
     valid = False
@@ -55,7 +62,16 @@ class Authenticator(object):
     error = None
     attempted_validation = False
 
-    def __init__(self, request, scope=None):
+    def __init__(
+            self, 
+            request, 
+            scope=None, 
+            authentication_method=AUTHENTICATION_METHOD):
+        if authentication_method not in [BEARER, MAC, BEARER | MAC]:
+            raise OAuth2Exception("Possible values for authentication_method" 
+                " are oauth2app.consts.MAC, oauth2app.consts.BEARER, "
+                "oauth2app.consts.MAC | oauth2app.consts.BEARER")
+        self.authentication_method = authentication_method
         if scope is None:
             self.authorized_scope = None
         elif isinstance(scope, AccessRange):
@@ -68,7 +84,6 @@ class Authenticator(object):
             auth = self.request.META["HTTP_AUTHORIZATION"].split()
             self.auth_type = auth[0].lower()
             self.auth_value = " ".join(auth[1:]).strip()
-
 
     def validate(self):
         """Validate the request. Raises an AuthenticationException if the
@@ -83,6 +98,7 @@ class Authenticator(object):
         self.valid = True
 
     def _validate(self):
+        """Validate the request."""
         # Check for Bearer or Mac authorization
         if self.auth_type in ["bearer", "mac"]:
             self.attempted_validation = True
@@ -112,6 +128,8 @@ class Authenticator(object):
 
     def _validate_bearer(self, token):
         """Validate Bearer token."""
+        if self.authentication_method & BEARER == 0:
+            raise InvalidToken("Bearer authentication is not supported.")
         try:
             self.access_token = AccessToken.objects.get(token=token)
         except AccessToken.DoesNotExist:
@@ -119,6 +137,8 @@ class Authenticator(object):
 
     def _validate_mac(self, auth):
         """Validate MAC authentication. Not implemented."""
+        if self.authentication_method & MAC == 0:
+            raise InvalidToken("MAC authentication is not supported.")
         auth = parse_qsl(auth.replace(",","&").replace('"', ''))
         auth = dict([(x[0].strip(), x[1].strip()) for x in auth])
         raise NotImplementedError()

@@ -1,13 +1,17 @@
 #-*- coding: utf-8 -*-
 
 
+"""OAuth 2.0 Authorization"""
+
+
 from urllib import urlencode
 from django.http import absolute_http_url_re, HttpResponseRedirect
 from .exceptions import OAuth2Exception
-from .models import Client, AccessRange, Code, AccessToken
+from .models import Client, AccessRange, Code, AccessToken, KeyGenerator
 from .lib.response import RESPONSE_TYPES, TOKEN, CODE, CODE_AND_TOKEN
 from .lib.response import is_valid_response_type
 from .consts import ACCESS_TOKEN_EXPIRATION
+from .consts import AUTHENTICATION_METHOD, MAC, BEARER, MAC_KEY_LENGTH
 from .lib.uri import add_parameters, add_fragments, normalize
 
 
@@ -81,13 +85,26 @@ class Authorizer(object):
 
     **Kwargs:**
 
-    * *scopes:* A iterable of oauth2app.models.AccessRange objects.
+    * *scope:* An iterable of oauth2app.models.AccessRange objects.
+
+    * *authentication_method:* Accepted authentication methods. Possible
+      values are: oauth2app.consts.MAC, oauth2app.consts.BEARER, 
+      oauth2app.consts.MAC | oauth2app.consts.BEARER
     """
     client = None
     valid = False
     error = None
     
-    def __init__(self, request, scope=None):
+    def __init__(
+            self, 
+            request, 
+            scope=None,
+            authentication_method=AUTHENTICATION_METHOD):
+        if authentication_method not in [BEARER, MAC, BEARER | MAC]:
+            raise OAuth2Exception("Possible values for authentication_method" 
+                " are oauth2app.consts.MAC, oauth2app.consts.BEARER, "
+                "oauth2app.consts.MAC | oauth2app.consts.BEARER")
+        self.authentication_method = authentication_method
         if scope is None:
             self.authorized_scope = None
         elif isinstance(scope, AccessRange):
@@ -98,6 +115,8 @@ class Authorizer(object):
         self.client_id = request.REQUEST.get('client_id')
         self.redirect_uri = request.REQUEST.get('redirect_uri')
         self.scope = request.REQUEST.get('scope')
+        if self.scope is not None:
+            self.scope = set(self.scope.split())
         self.state = request.REQUEST.get('state')
         self.user = request.user
         self.request = request
@@ -117,6 +136,7 @@ class Authorizer(object):
         self.valid = True
     
     def _validate(self):
+        """Validate the request."""
         if self.client_id is None:
             raise InvalidRequest('No client_id')
         try: 
@@ -152,15 +172,14 @@ class Authorizer(object):
         if self.authorized_scope is not None and self.scope is None:
             self.scope = self.authorized_scope
         if self.scope is not None:
-            scopes = set(self.scope.split())
-            access_ranges = AccessRange.objects.filter(key__in=scopes)
+            access_ranges = AccessRange.objects.filter(key__in=self.scope)
             access_ranges = set(access_ranges.values_list('key', flat=True))
-            difference = access_ranges.symmetric_difference(scopes)
+            difference = access_ranges.symmetric_difference(self.scope)
             if len(difference) != 0:
                 raise InvalidScope("Following access ranges do not "
                     "exist: %s" % ', '.join(difference))
             if self.authorized_scope is not None:
-                new_scope = scopes - self.authorized_scope
+                new_scope = self.scope - self.authorized_scope
                 if len(new_scope) > 0:
                     raise InvalidScope("Invalid scope: %s" % list(new_scope))
                     
@@ -183,10 +202,10 @@ class Authorizer(object):
             e = self.error
         else:
             e = AccessDenied("Access Denied.")
-        qs = {'error': e.error, 'error_description': u'%s' % e.message}
+        parameters = {'error': e.error, 'error_description': u'%s' % e.message}
         if self.state is not None:
-            qs['state'] = self.state
-        redirect_uri = add_parameters(self.redirect_uri, qs)
+            parameters['state'] = self.state
+        redirect_uri = add_parameters(self.redirect_uri, parameters)
         return HttpResponseRedirect(redirect_uri)
  
     def _query_string(self):
@@ -224,12 +243,11 @@ class Authorizer(object):
             raise UnvalidatedRequest("This request is invalid or has not "
                 "been validated.")
         if self.user.is_authenticated():
-            qs = {}
-            frag = {}
+            parameters = {}
+            fragments = {}
             response_type = RESPONSE_TYPES[self.response_type]
             if self.scope is not None:
-                scopes = set(self.scope.split())
-                access_ranges = list(AccessRange.objects.filter(key__in=scopes))
+                access_ranges = list(AccessRange.objects.filter(key__in=self.scope))
             else:
                 access_ranges = []
             if response_type in [CODE, CODE_AND_TOKEN]:
@@ -239,20 +257,24 @@ class Authorizer(object):
                     redirect_uri=self.redirect_uri)
                 code.scope = access_ranges
                 code.save()
-                qs['code'] = code.key
+                parameters['code'] = code.key
             if response_type in [TOKEN, CODE_AND_TOKEN]:
                 access_token = AccessToken.objects.create(
                     user=self.user,
                     client=self.client)
                 access_token.scope = access_ranges
+                fragments['access_token'] = access_token.token
+                fragments['expires_in'] = ACCESS_TOKEN_EXPIRATION
+                fragments['scope'] = self.scope
+                if self.authentication_method & MAC != 0:
+                    access_token.mac_key = KeyGenerator(MAC_KEY_LENGTH)()
+                    fragments["mac_key"] = access_token.mac_key
+                    fragments["mac_algorithm"] = "hmac-sha-256"
                 access_token.save()
-                frag['access_token'] = access_token.token
-                frag['expires_in'] = ACCESS_TOKEN_EXPIRATION
-                frag['scope'] = self.scope
             if self.state is not None:
-                qs['state'] = self.state
-            redirect_uri = add_parameters(self.redirect_uri, qs)
-            redirect_uri = add_fragments(redirect_uri, frag)
+                parameters['state'] = self.state
+            redirect_uri = add_parameters(self.redirect_uri, parameters)
+            redirect_uri = add_fragments(redirect_uri, fragments)
             return HttpResponseRedirect(redirect_uri)
         else:
             raise UnauthenticatedUser("Django user object associated with the "

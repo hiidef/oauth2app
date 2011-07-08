@@ -1,16 +1,20 @@
 #-*- coding: utf-8 -*-
 
 
-from base64 import b64encode, b64decode
+"""OAuth 2.0 Token Generation"""
+
+
+from base64 import b64encode
 from django.http import HttpResponse
-from django.contrib import auth
 from django.contrib.auth import authenticate
 from django.views.decorators.csrf import csrf_exempt
 from simplejson import dumps
 from .exceptions import OAuth2Exception
-from .consts import ACCESS_TOKEN_EXPIRATION, REFRESH_TOKEN_LENGTH, MAC_KEY
+from .consts import ACCESS_TOKEN_EXPIRATION, REFRESH_TOKEN_LENGTH 
+from .consts import AUTHENTICATION_METHOD, MAC, BEARER, MAC_KEY_LENGTH
 from .lib.uri import normalize
-from .models import Client, AccessRange, Code, AccessToken, TimestampGenerator, KeyGenerator
+from .models import Client, AccessRange, Code, AccessToken, TimestampGenerator 
+from .models import KeyGenerator
 
 
 class AccessTokenException(OAuth2Exception):
@@ -88,7 +92,16 @@ class TokenGenerator(object):
 
     **Args:**
 
-    * *request:* Django HttpRequest object."""
+    * *request:* Django HttpRequest object.
+
+    **Kwargs:**
+
+    * *scope:* An iterable of oauth2app.models.AccessRange objects.
+
+    * *authentication_method:* Accepted authentication methods. Possible
+      values are: oauth2app.consts.MAC, oauth2app.consts.BEARER, 
+      oauth2app.consts.MAC | oauth2app.consts.BEARER
+    """
 
     valid = False
     code = None
@@ -97,7 +110,16 @@ class TokenGenerator(object):
     user = None
     error = None
 
-    def __init__(self, request, scope=None):
+    def __init__(
+            self, 
+            request, 
+            scope=None,
+            authentication_method=AUTHENTICATION_METHOD):
+        if authentication_method not in [BEARER, MAC, BEARER | MAC]:
+            raise OAuth2Exception("Possible values for authentication_method" 
+                " are oauth2app.consts.MAC, oauth2app.consts.BEARER, "
+                "oauth2app.consts.MAC | oauth2app.consts.BEARER")
+        self.authentication_method = authentication_method
         if scope is None:
             self.authorized_scope = None
         elif isinstance(scope, AccessRange):
@@ -108,6 +130,8 @@ class TokenGenerator(object):
         self.client_id = request.REQUEST.get('client_id')
         self.client_secret = request.POST.get('client_secret')
         self.scope = request.REQUEST.get('scope')
+        if self.scope is not None:
+            self.scope = set(self.scope.split())
         # authorization_code, see 4.1.3.  Access Token Request
         self.code_key = request.REQUEST.get('code')
         self.redirect_uri = request.REQUEST.get('redirect_uri')
@@ -134,6 +158,7 @@ class TokenGenerator(object):
         self.valid = True
 
     def _validate(self):
+        """Validate the request."""
         # Check response type
         if self.grant_type is None:
             raise InvalidRequest('No grant_type provided.')
@@ -142,7 +167,7 @@ class TokenGenerator(object):
                 "refresh_token",
                 "password",
                 "client_credentials"]:
-            raise UnsupportedGrantType('No such grant type: %s' % self.grant_type)
+            raise UnsupportedGrantType('No grant type: %s' % self.grant_type)
         if self.client_id is None:
             raise InvalidRequest('No client_id')
         try:
@@ -151,12 +176,12 @@ class TokenGenerator(object):
             raise InvalidClient("client_id %s doesn't exist" % self.client_id)
         # Scope
         if self.scope is not None:
-            scopes = set(self.scope.split())
-            access_ranges = AccessRange.objects.filter(key__in=scopes)
+            access_ranges = AccessRange.objects.filter(key__in=self.scope)
             access_ranges = set(access_ranges.values_list('key', flat=True))
-            difference = access_ranges.symmetric_difference(scopes)
+            difference = access_ranges.symmetric_difference(self.scope)
             if len(difference) != 0:
-                raise InvalidScope("Following access ranges doesn't exist: %s" % ', '.join(difference))
+                raise InvalidScope("Following access ranges doesn't exist: "
+                    "%s" % ', '.join(difference))
         if self.grant_type == "authorization_code":
             self._validate_authorization_code()
         elif self.grant_type == "refresh_token":
@@ -171,9 +196,11 @@ class TokenGenerator(object):
     def _validate_access_credentials(self):
         """Validate the request's access credentials."""
         if self.client_secret is None and "HTTP_AUTHORIZATION" in self.request.META:
-            auth, value = self.request.META["HTTP_AUTHORIZATION"].split()[0:2]
-            if auth.lower() == "basic":
-                if value != b64encode("%s:%s" % (self.client.key, self.client.secret)):
+            authorization = self.request.META["HTTP_AUTHORIZATION"]
+            auth_type, auth_value = authorization.split()[0:2]
+            if auth_type.lower() == "basic":
+                credentials = "%s:%s" % (self.client.key, self.client.secret)
+                if auth_value != b64encode(credentials):
                     raise InvalidClient('Client authentication failed.')
             else:
                 raise InvalidClient('Client authentication failed.')
@@ -196,7 +223,7 @@ class TokenGenerator(object):
         now = TimestampGenerator()()
         if self.code.expire < now:
             raise InvalidGrant("Provided code is expired")
-        self.scope = ' '.join([x.key for x in self.code.scope.all()])
+        self.scope = set([x.key for x in self.code.scope.all()])
         if self.redirect_uri is None:
             raise InvalidRequest('No redirect_uri')
         if normalize(self.redirect_uri) != normalize(self.code.redirect_uri):
@@ -209,21 +236,23 @@ class TokenGenerator(object):
         if self.password is None:
             raise InvalidRequest('No password')
         if self.scope is not None:
-            scopes = set(self.scope.split())
-            access_ranges = AccessRange.objects.filter(key__in=scopes)
+            access_ranges = AccessRange.objects.filter(key__in=self.scope)
             access_ranges = set(access_ranges.values_list('key', flat=True))
-            difference = access_ranges.symmetric_difference(scopes)
+            difference = access_ranges.symmetric_difference(self.scope)
             if len(difference) != 0:
                 raise InvalidScope("""Following access ranges do not
                     exist: %s""" % ', '.join(difference))
             if self.authorized_scope is not None:
-                new_scope = scopes - self.authorized_scope
+                new_scope = self.scope - self.authorized_scope
                 if len(new_scope) > 0:
-                    raise InvalidScope("""Invalid scope request: %s""" % list(new_scope))
+                    raise InvalidScope(
+                        "Invalid scope request: %s" % list(new_scope))
         if "HTTP_AUTHORIZATION" in self.request.META:
-            auth, value = self.request.META["HTTP_AUTHORIZATION"].split()[0:2]
-            if auth.lower() == "basic":
-                if value != b64encode("%s:%s" % (self.client.key, self.client.secret)):
+            authorization = self.request.META["HTTP_AUTHORIZATION"]
+            auth_type, auth_value = authorization.split()[0:2]
+            if auth_type.lower() == "basic":
+                credentials = "%s:%s" % (self.client.key, self.client.secret)
+                if auth_value != b64encode(credentials):
                     raise InvalidClient('Client authentication failed.')
             else:
                 raise InvalidClient('Client authentication failed.')
@@ -245,14 +274,15 @@ class TokenGenerator(object):
         if self.refresh_token is None:
             raise InvalidRequest('No refresh_token')
         try:
-            self.access_token = AccessToken.objects.get(refresh_token=self.refresh_token)
+            self.access_token = AccessToken.objects.get(
+                refresh_token=self.refresh_token)
         except AccessToken.DoesNotExist:
-            raise InvalidRequest('No such refresh token: %s' % self.refresh_token)
+            raise InvalidRequest(
+                'No such refresh token: %s' % self.refresh_token)
         self._validate_access_credentials()
         if self.scope is not None:
             access_ranges = set([x.key for x in self.access_token.scope.all()])
-            scopes = set(self.scope.split())
-            new_scope = scopes - access_ranges
+            new_scope = self.scope - access_ranges
             if len(new_scope) > 0:
                 raise InvalidScope("Refresh request requested scopes beyond"
                 "initial grant: %s" % new_scope)
@@ -286,7 +316,8 @@ class TokenGenerator(object):
     def grant_response(self):
         """Returns a JSON formatted authorization code."""
         if not self.valid:
-            raise UnvalidatedRequest("This request is invalid or has not been validated.")
+            raise UnvalidatedRequest("This request is invalid or has not been"
+                " validated.")
         if self.grant_type == "authorization_code":
             access_token = self._get_authorization_code_token()
         elif self.grant_type == "refresh_token":
@@ -298,9 +329,9 @@ class TokenGenerator(object):
         data = {
             'access_token': access_token.token,
             'expire_in': ACCESS_TOKEN_EXPIRATION}
-        # if MAC_KEY:
-        #     data["mac_key"] = "hmac-sha-256"
-        #     data["mac_algorithm"] = "hmac-sha-256"
+        if self.authentication_method & MAC != 0:
+            data["mac_key"] = access_token.mac_key
+            data["mac_algorithm"] = "hmac-sha-256"
         if access_token.refreshable:
             data['refresh_token'] = access_token.refresh_token
         if self.scope:
@@ -315,43 +346,49 @@ class TokenGenerator(object):
         return response
 
     def _get_authorization_code_token(self):
+        """Generate an access token after authorization_code authorization."""
         access_token = AccessToken.objects.create(
             user=self.code.user,
             client=self.client)
-        scopes = set(self.scope.split())
-        access_ranges = list(AccessRange.objects.filter(key__in=scopes))
+        if self.authentication_method & MAC != 0:
+            access_token.mac_key = KeyGenerator(MAC_KEY_LENGTH)()
+        access_ranges = list(AccessRange.objects.filter(key__in=self.scope))
         access_token.scope = access_ranges
         access_token.save()
         self.code.delete()
         return access_token
 
     def _get_password_token(self):
+        """Generate an access token after password authorization."""
         access_token = AccessToken.objects.create(
             user=self.user,
             client=self.client)
-        scopes = set(self.scope.split())
-        access_ranges = list(AccessRange.objects.filter(key__in=scopes))
+        if self.authentication_method & MAC != 0:
+            access_token.mac_key = KeyGenerator(MAC_KEY_LENGTH)()
+        access_ranges = list(AccessRange.objects.filter(key__in=self.scope))
         access_token.scope = access_ranges
         access_token.save()
         return access_token
 
     def _get_refresh_token(self):
+        """Generate an access token after refresh authorization."""
         self.access_token.refresh_token = KeyGenerator(REFRESH_TOKEN_LENGTH)()
         self.access_token.expire = TimestampGenerator(ACCESS_TOKEN_EXPIRATION)()
-        scopes = set(self.scope.split())
-        access_ranges = list(AccessRange.objects.filter(key__in=scopes))
+        access_ranges = list(AccessRange.objects.filter(key__in=self.scope))
         self.access_token.scope = access_ranges
         self.access_token.save()
         return self.access_token
 
     def _get_client_credentials_token(self):
+        """Generate an access token after client_credentials authorization."""
         access_token = AccessToken.objects.create(
             user=self.client.user,
-            client=self.client,
-            scope=self.scope)
-        scopes = set(self.scope.split())
-        access_ranges = list(AccessRange.objects.filter(key__in=scopes))
+            client=self.client)
+        if self.authentication_method & MAC != 0:
+            access_token.mac_key = KeyGenerator(MAC_KEY_LENGTH)()
+        access_ranges = list(AccessRange.objects.filter(key__in=self.scope))
         self.access_token.scope = access_ranges
+        self.access_token.save()
         return self.access_token
 
 

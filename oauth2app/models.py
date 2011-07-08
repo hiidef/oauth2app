@@ -1,13 +1,19 @@
 #-*- coding: utf-8 -*-
 
 
+"""OAuth 2.0 Django Models"""
+
+
 import time
 from hashlib import sha512
 from uuid import uuid4
 from django.db import models
 from django.contrib.auth.models import User
-from .consts import *
-from .lib.response import RESPONSE_CHOICES, CODE
+from .consts import CLIENT_KEY_LENGTH, CLIENT_SECRET_LENGTH
+from .consts import ACCESS_TOKEN_LENGTH, REFRESH_TOKEN_LENGTH
+from .consts import ACCESS_TOKEN_EXPIRATION, MAC_KEY_LENGTH, REFRESHABLE
+from .consts import CODE_KEY_LENGTH, CODE_EXPIRATION
+from .lib.response import CODE
 
 
 class TimestampGenerator(object):
@@ -116,6 +122,7 @@ class AccessToken(models.Model):
       character random string*
     * *refresh_token:* A string representing the access key token. *Default 10 
       character random string*
+    * *mac_key:* A string representing the MAC key. *Default None*
     * *expire:* A positive integer timestamp representing the access token's 
       expiration time.
     * *scope:* A list of oauth2app.models.AccessRange objects. *Default None* 
@@ -137,6 +144,12 @@ class AccessToken(models.Model):
         max_length=REFRESH_TOKEN_LENGTH, 
         default=KeyGenerator(REFRESH_TOKEN_LENGTH),
         db_index=True)
+    mac_key = models.CharField(
+        unique=True, 
+        blank=True, 
+        null=True, 
+        max_length=MAC_KEY_LENGTH, 
+        default=None)
     issue = models.PositiveIntegerField(
         editable=False, 
         default=TimestampGenerator())

@@ -1,8 +1,12 @@
 #-*- coding: utf-8 -*-
 
 
+"""OAuth 2.0 Response Types"""
+
+
 from ..exceptions import OAuth2Exception
 from itertools import combinations
+
 
 TOKEN = 1
 CODE = 2
@@ -14,21 +18,18 @@ RESPONSE_TYPES = {
 RESPONSE_OPTIONS = RESPONSE_TYPES.values()
 RESPONSE_CHOICES = []
 for x in range(1, len(RESPONSE_OPTIONS) + 1):
-    RESPONSE_CHOICES += [reduce(lambda a, b:a|b, y) for y in combinations(RESPONSE_OPTIONS, x)]
+    combs = combinations(RESPONSE_OPTIONS, x)
+    RESPONSE_CHOICES += [reduce(lambda a, b:a|b, y) for y in combs]
 
 
 class InvalidResponseType(OAuth2Exception):
+    """Raised when is_valid_response_type encounters an invalid 
+    response type."""
     pass
 
 
-def reduce_response_types(*args):
-    for x in args:
-        if x not in RESPONSE_OPTIONS:
-            raise InvalidResponseType("Invalid response type: %s" % x)
-    return reduce(lambda x, y: x|y, args)
-
-
 def is_valid_response_type(x, y):
+    """Checks if response type x is a subset of response set range y."""
     if x not in RESPONSE_CHOICES:
         raise InvalidResponseType("Invalid response type: %s" % x)
     if y not in RESPONSE_CHOICES:
