@@ -71,7 +71,6 @@ def signup(request):
                     form.cleaned_data["username"],
                     form.cleaned_data["email"],
                     form.cleaned_data["password1"],)
-            user.save()
             user = auth.authenticate(
                     username=form.cleaned_data["username"],
                     password=form.cleaned_data["password1"])
