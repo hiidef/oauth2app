@@ -1,0 +1,304 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Authorization &mdash; Django OAuth 2.0 Server App v0.1.0 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Django OAuth 2.0 Server App v0.1.0 documentation" href="index.html" />
+    <link rel="next" title="Authentication" href="authenticate.html" />
+    <link rel="prev" title="Django OAuth 2.0 Server App" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="authenticate.html" title="Authentication"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Django OAuth 2.0 Server App"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Django OAuth 2.0 Server App v0.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="authorization">
+<h1>Authorization<a class="headerlink" href="#authorization" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="authorizer">
+<h2>Authorizer<a class="headerlink" href="#authorizer" title="Permalink to this headline">¶</a></h2>
+<p>The authorizer grants access tokens and authentication codes via query string parameters and URI fragments
+sent to redirect URIs. Optionally a &#8220;scope&#8221; kwarg of one or more AccessRange objects can be passed to verify
+that granted tokens can only be used to access specific scopes.</p>
+<p>In the event of an error the Authorizer:error_response() method will return a redirect response to the
+client&#8217;s redirect_uri with information on the error passed as query string parameters.</p>
+<p>If a request is authorized, Authorizer:grant_response() will serialize an object into a JSON response will
+return a redirect response to the client&#8217;s redirect_uri with information on the authorization code passed as query string parameters (response_type CODE) or access token passed as URI fragments.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">oauth2app.authorize</span> <span class="kn">import</span> <span class="n">Authorizer</span><span class="p">,</span> <span class="n">MissingRedirectURI</span><span class="p">,</span> <span class="n">AuthorizationException</span>
+<span class="kn">from</span> <span class="nn">oauth2app.models</span> <span class="kn">import</span> <span class="n">AccessRange</span>
+
+<span class="nd">@login_required</span>
+<span class="k">def</span> <span class="nf">authorize</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="n">scope</span> <span class="o">=</span> <span class="n">AccessRange</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s">&quot;last_login&quot;</span><span class="p">)</span>
+    <span class="n">authorizer</span> <span class="o">=</span> <span class="n">Authorizer</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="n">scope</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c"># Validate the request.</span>
+        <span class="n">authorizer</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">MissingRedirectURI</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+        <span class="c"># No redirect_uri was specified.</span>
+        <span class="k">return</span> <span class="n">HttpResponseRedirect</span><span class="p">(</span><span class="s">&quot;/oauth2/missing_redirect_uri&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">AuthorizationException</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+        <span class="c"># The request is malformed or invalid. Redirect to redirect_uri with error params.</span>
+        <span class="k">return</span> <span class="n">authorizer</span><span class="o">.</span><span class="n">error_redirect</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s">&#39;GET&#39;</span><span class="p">:</span>
+        <span class="n">template</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c"># Use any form, make sure it has CSRF protections.</span>
+        <span class="n">template</span><span class="p">[</span><span class="s">&quot;form&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">AuthorizeForm</span><span class="p">()</span>
+        <span class="c"># Appends the original OAuth2 parameters.</span>
+        <span class="n">template</span><span class="p">[</span><span class="s">&quot;form_action&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;/oauth2/authorize?</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">authorizer</span><span class="o">.</span><span class="n">query_string</span>
+        <span class="k">return</span> <span class="n">render_to_response</span><span class="p">(</span>
+            <span class="s">&#39;oauth2/authorize.html&#39;</span><span class="p">,</span>
+            <span class="n">template</span><span class="p">,</span>
+            <span class="n">RequestContext</span><span class="p">(</span><span class="n">request</span><span class="p">))</span>
+    <span class="k">elif</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s">&#39;POST&#39;</span><span class="p">:</span>
+        <span class="n">form</span> <span class="o">=</span> <span class="n">AuthorizeForm</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">form</span><span class="o">.</span><span class="n">is_valid</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;connect&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s">&quot;Yes&quot;</span><span class="p">:</span>
+                <span class="c"># User agrees. Redirect to redirect_uri with success params.</span>
+                <span class="k">return</span> <span class="n">authorizer</span><span class="o">.</span><span class="n">grant_redirect</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c"># User refuses. Redirect to redirect_uri with error params.</span>
+                <span class="k">return</span> <span class="n">authorizer</span><span class="o">.</span><span class="n">error_redirect</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">HttpResponseRedirect</span><span class="p">(</span><span class="s">&quot;/&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="module-oauth2app.authorize">
+<span id="module-reference"></span><h2>Module Reference<a class="headerlink" href="#module-oauth2app.authorize" title="Permalink to this headline">¶</a></h2>
+<p>OAuth 2.0 Authorization</p>
+<dl class="exception">
+<dt id="oauth2app.authorize.AccessDenied">
+<em class="property">exception </em><tt class="descclassname">oauth2app.authorize.</tt><tt class="descname">AccessDenied</tt><a class="reference internal" href="_modules/oauth2app/authorize.html#AccessDenied"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.authorize.AccessDenied" title="Permalink to this definition">¶</a></dt>
+<dd><p>The resource owner or authorization server denied the
+request.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="oauth2app.authorize.AuthorizationException">
+<em class="property">exception </em><tt class="descclassname">oauth2app.authorize.</tt><tt class="descname">AuthorizationException</tt><a class="reference internal" href="_modules/oauth2app/authorize.html#AuthorizationException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.authorize.AuthorizationException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Authorization exception base class.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="oauth2app.authorize.Authorizer">
+<em class="property">class </em><tt class="descclassname">oauth2app.authorize.</tt><tt class="descname">Authorizer</tt><big>(</big><em>scope=None</em>, <em>authentication_method=1</em>, <em>refreshable=True</em>, <em>response_type=2</em><big>)</big><a class="reference internal" href="_modules/oauth2app/authorize.html#Authorizer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.authorize.Authorizer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Access authorizer. Validates access credentials and generates
+a response with an authorization code passed as a parameter to the
+redirect URI, an access token passed as a URI fragment to the redirect
+URI, or both.</p>
+<p><strong>Kwargs:</strong></p>
+<ul class="simple">
+<li><em>scope:</em> An iterable of oauth2app.models.AccessRange objects representing
+the scope the authorizer can grant. <em>Default None</em></li>
+<li><em>authentication_method:</em> Type of token to generate. Possible
+values are: oauth2app.consts.MAC and oauth2app.consts.BEARER
+<em>Default oauth2app.consts.BEARER</em></li>
+<li><em>refreshable:</em> Boolean value indicating whether issued tokens are 
+refreshable. <em>Default True</em></li>
+</ul>
+<dl class="method">
+<dt id="oauth2app.authorize.Authorizer.error_redirect">
+<tt class="descname">error_redirect</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/oauth2app/authorize.html#Authorizer.error_redirect"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.authorize.Authorizer.error_redirect" title="Permalink to this definition">¶</a></dt>
+<dd><p>In the event of an error, return a Django HttpResponseRedirect
+with the appropriate error parameters.</p>
+<p>Raises MissingRedirectURI if no redirect_uri is available.</p>
+<p><em>Returns HttpResponseRedirect</em></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="oauth2app.authorize.Authorizer.grant_redirect">
+<tt class="descname">grant_redirect</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/oauth2app/authorize.html#Authorizer.grant_redirect"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.authorize.Authorizer.grant_redirect" title="Permalink to this definition">¶</a></dt>
+<dd><p>On successful authorization of the request, return a Django 
+HttpResponseRedirect with the appropriate authorization code parameters
+or access token URI fragments..</p>
+<p>Raises UnvalidatedRequest if the request has not been validated.</p>
+<p><em>Returns HttpResponseRedirect</em></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="oauth2app.authorize.Authorizer.query_string">
+<tt class="descname">query_string</tt><a class="headerlink" href="#oauth2app.authorize.Authorizer.query_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the a url encoded query string useful for resending request
+parameters when a user authorizes the request via a form POST.</p>
+<p>Raises UnvalidatedRequest if the request has not been validated.</p>
+<p><em>Returns str</em></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="oauth2app.authorize.Authorizer.validate">
+<tt class="descname">validate</tt><big>(</big><em>request</em><big>)</big><a class="reference internal" href="_modules/oauth2app/authorize.html#Authorizer.validate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.authorize.Authorizer.validate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Validate the request. Raises an AuthorizationException if the 
+request fails authorization, or a MissingRedirectURI if no 
+redirect_uri is available.</p>
+<p><strong>Args:</strong></p>
+<ul class="simple">
+<li><em>request:</em> Django HttpRequest object.</li>
+</ul>
+<p><em>Returns None</em></p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt id="oauth2app.authorize.InvalidClient">
+<em class="property">exception </em><tt class="descclassname">oauth2app.authorize.</tt><tt class="descname">InvalidClient</tt><a class="reference internal" href="_modules/oauth2app/authorize.html#InvalidClient"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.authorize.InvalidClient" title="Permalink to this definition">¶</a></dt>
+<dd><p>Client authentication failed (e.g. unknown client, no
+client credentials included, multiple client credentials
+included, or unsupported credentials type).</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="oauth2app.authorize.InvalidRequest">
+<em class="property">exception </em><tt class="descclassname">oauth2app.authorize.</tt><tt class="descname">InvalidRequest</tt><a class="reference internal" href="_modules/oauth2app/authorize.html#InvalidRequest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.authorize.InvalidRequest" title="Permalink to this definition">¶</a></dt>
+<dd><p>The request is missing a required parameter, includes an
+unsupported parameter or parameter value, or is otherwise
+malformed.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="oauth2app.authorize.InvalidScope">
+<em class="property">exception </em><tt class="descclassname">oauth2app.authorize.</tt><tt class="descname">InvalidScope</tt><a class="reference internal" href="_modules/oauth2app/authorize.html#InvalidScope"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.authorize.InvalidScope" title="Permalink to this definition">¶</a></dt>
+<dd><p>The requested scope is invalid, unknown, or malformed.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="oauth2app.authorize.MissingRedirectURI">
+<em class="property">exception </em><tt class="descclassname">oauth2app.authorize.</tt><tt class="descname">MissingRedirectURI</tt><a class="reference internal" href="_modules/oauth2app/authorize.html#MissingRedirectURI"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.authorize.MissingRedirectURI" title="Permalink to this definition">¶</a></dt>
+<dd><p>Neither the request nor the client specify a redirect_url.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="oauth2app.authorize.UnauthenticatedUser">
+<em class="property">exception </em><tt class="descclassname">oauth2app.authorize.</tt><tt class="descname">UnauthenticatedUser</tt><a class="reference internal" href="_modules/oauth2app/authorize.html#UnauthenticatedUser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.authorize.UnauthenticatedUser" title="Permalink to this definition">¶</a></dt>
+<dd><p>The provided user is not internally authenticated, via 
+user.is_authenticated()</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="oauth2app.authorize.UnauthorizedClient">
+<em class="property">exception </em><tt class="descclassname">oauth2app.authorize.</tt><tt class="descname">UnauthorizedClient</tt><a class="reference internal" href="_modules/oauth2app/authorize.html#UnauthorizedClient"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.authorize.UnauthorizedClient" title="Permalink to this definition">¶</a></dt>
+<dd><p>The client is not authorized to request an authorization
+code using this method.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="oauth2app.authorize.UnsupportedResponseType">
+<em class="property">exception </em><tt class="descclassname">oauth2app.authorize.</tt><tt class="descname">UnsupportedResponseType</tt><a class="reference internal" href="_modules/oauth2app/authorize.html#UnsupportedResponseType"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.authorize.UnsupportedResponseType" title="Permalink to this definition">¶</a></dt>
+<dd><p>The authorization server does not support obtaining an
+authorization code using this method.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="oauth2app.authorize.UnvalidatedRequest">
+<em class="property">exception </em><tt class="descclassname">oauth2app.authorize.</tt><tt class="descname">UnvalidatedRequest</tt><a class="reference internal" href="_modules/oauth2app/authorize.html#UnvalidatedRequest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.authorize.UnvalidatedRequest" title="Permalink to this definition">¶</a></dt>
+<dd><p>The method requested requires a validated request to continue.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Authorization</a><ul>
+<li><a class="reference internal" href="#authorizer">Authorizer</a></li>
+<li><a class="reference internal" href="#module-oauth2app.authorize">Module Reference</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Django OAuth 2.0 Server App</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="authenticate.html"
+                        title="next chapter">Authentication</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/authorize.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="authenticate.html" title="Authentication"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Django OAuth 2.0 Server App"
+             >previous</a> |</li>
+        <li><a href="index.html">Django OAuth 2.0 Server App v0.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, John Wehr.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+    </div>
+  </body>
+</html>

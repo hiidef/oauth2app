@@ -1,0 +1,320 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Authentication &mdash; Django OAuth 2.0 Server App v0.1.0 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Django OAuth 2.0 Server App v0.1.0 documentation" href="index.html" />
+    <link rel="next" title="Access Token Generation" href="token.html" />
+    <link rel="prev" title="Authorization" href="authorize.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="token.html" title="Access Token Generation"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="authorize.html" title="Authorization"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Django OAuth 2.0 Server App v0.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="authentication">
+<h1>Authentication<a class="headerlink" href="#authentication" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="authenticator">
+<h2>Authenticator<a class="headerlink" href="#authenticator" title="Permalink to this headline">¶</a></h2>
+<p>The Authenticator object verifies that a request has proper authentication credentials. Optionally a &#8220;scope&#8221; kwarg
+of one or more AccessRange objects can be passed to verify that tokens used to access this resource are authorized
+to access the specific scope.</p>
+<p>In the event of an error the Authenticator:error_response() method will wrap an error response with
+the appropriate OAuth2 headers.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">oauth2app.authenticate</span> <span class="kn">import</span> <span class="n">Authenticator</span><span class="p">,</span> <span class="n">AuthenticationException</span>
+<span class="kn">from</span> <span class="nn">oauth2app.models</span> <span class="kn">import</span> <span class="n">AccessRange</span>
+<span class="kn">from</span> <span class="nn">django.http</span> <span class="kn">import</span> <span class="n">HttpResponse</span>
+
+<span class="k">def</span> <span class="nf">test</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="n">scope</span> <span class="o">=</span> <span class="n">AccessRange</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s">&quot;test_scope&quot;</span><span class="p">)</span>
+    <span class="n">authenticator</span> <span class="o">=</span> <span class="n">Authenticator</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="n">scope</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c"># Validate the request.</span>
+        <span class="n">authenticator</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">AuthenticationException</span><span class="p">:</span>
+        <span class="c"># Return an error response.</span>
+        <span class="k">return</span> <span class="n">authenticator</span><span class="o">.</span><span class="n">error_response</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="s">&quot;You didn&#39;t authenticate.&quot;</span><span class="p">)</span>
+    <span class="n">username</span> <span class="o">=</span> <span class="n">authenticator</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">username</span>
+    <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="s">&quot;Hi </span><span class="si">%s</span><span class="s">, You authenticated!&quot;</span> <span class="o">%</span> <span class="n">username</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="jsonauthenticator">
+<h2>JSONAuthenticator<a class="headerlink" href="#jsonauthenticator" title="Permalink to this headline">¶</a></h2>
+<p>The JSONAuthenticator adds convenience methods and supports an optional callback request parameter
+for use with JSONP requests.</p>
+<p>In the event of an error the JSONAuthenticator:error_response() method will return a
+JSON formatted error HttpResponse.</p>
+<p>JSONAuthenticator:response() will serialize an object and return a formatted HttpResponse.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">oauth2app.authenticate</span> <span class="kn">import</span> <span class="n">JSONAuthenticator</span><span class="p">,</span> <span class="n">AuthenticationException</span>
+
+<span class="k">def</span> <span class="nf">test</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="n">authenticator</span> <span class="o">=</span> <span class="n">JSONAuthenticator</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c"># Validate the request.</span>
+        <span class="n">authenticator</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">AuthenticationException</span><span class="p">:</span>
+        <span class="c"># Return a JSON encoded error response.</span>
+        <span class="k">return</span> <span class="n">authenticator</span><span class="o">.</span><span class="n">error_response</span><span class="p">()</span>
+    <span class="n">username</span> <span class="o">=</span> <span class="n">authenticator</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">userame</span>
+    <span class="c"># Return a JSON encoded response.</span>
+    <span class="k">return</span> <span class="n">authenticator</span><span class="o">.</span><span class="n">response</span><span class="p">({</span><span class="s">&quot;username&quot;</span><span class="p">:</span><span class="n">username</span><span class="p">})</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="module-oauth2app.authenticate">
+<span id="module-reference"></span><h2>Module Reference<a class="headerlink" href="#module-oauth2app.authenticate" title="Permalink to this headline">¶</a></h2>
+<p>OAuth 2.0 Authentication</p>
+<dl class="exception">
+<dt id="oauth2app.authenticate.AuthenticationException">
+<em class="property">exception </em><tt class="descclassname">oauth2app.authenticate.</tt><tt class="descname">AuthenticationException</tt><a class="reference internal" href="_modules/oauth2app/authenticate.html#AuthenticationException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.authenticate.AuthenticationException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Authentication exception base class.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="oauth2app.authenticate.Authenticator">
+<em class="property">class </em><tt class="descclassname">oauth2app.authenticate.</tt><tt class="descname">Authenticator</tt><big>(</big><em>scope=None</em>, <em>authentication_method=1</em><big>)</big><a class="reference internal" href="_modules/oauth2app/authenticate.html#Authenticator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.authenticate.Authenticator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Django HttpRequest authenticator. Checks a request for valid
+credentials and scope.</p>
+<p><strong>Kwargs:</strong></p>
+<ul class="simple">
+<li><em>scope:</em> An iterable of oauth2app.models.AccessRange objects representing
+the scope the authenticator will authenticate.
+<em>Default None</em></li>
+<li><em>authentication_method:</em> Accepted authentication methods. Possible
+values are: oauth2app.consts.MAC, oauth2app.consts.BEARER, 
+oauth2app.consts.MAC | oauth2app.consts.BEARER, 
+<em>Default oauth2app.consts.BEARER</em></li>
+</ul>
+<dl class="attribute">
+<dt id="oauth2app.authenticate.Authenticator.client">
+<tt class="descname">client</tt><a class="headerlink" href="#oauth2app.authenticate.Authenticator.client" title="Permalink to this definition">¶</a></dt>
+<dd><p>The client associated with the valid access token.</p>
+<p><em>oauth2app.models.Client object</em></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="oauth2app.authenticate.Authenticator.error_response">
+<tt class="descname">error_response</tt><big>(</big><em>content=''</em>, <em>mimetype=None</em>, <em>content_type='text/html'</em><big>)</big><a class="reference internal" href="_modules/oauth2app/authenticate.html#Authenticator.error_response"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.authenticate.Authenticator.error_response" title="Permalink to this definition">¶</a></dt>
+<dd><p>Error response generator. Returns a Django HttpResponse with status
+401 and the approproate headers set. See Django documentation for details.
+<a class="reference external" href="https://docs.djangoproject.com/en/dev/ref/request-response/#django.http.HttpResponse.__init__">https://docs.djangoproject.com/en/dev/ref/request-response/#django.http.HttpResponse.__init__</a></p>
+<p><strong>Kwargs:</strong></p>
+<ul class="simple">
+<li><em>content:</em> See Django docs. <em>Default &#8216;&#8217;</em></li>
+<li><em>mimetype:</em> See Django docs. <em>Default None</em></li>
+<li><em>content_type:</em> See Django docs. <em>Default DEFAULT_CONTENT_TYPE</em></li>
+</ul>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="oauth2app.authenticate.Authenticator.scope">
+<tt class="descname">scope</tt><a class="headerlink" href="#oauth2app.authenticate.Authenticator.scope" title="Permalink to this definition">¶</a></dt>
+<dd><p>The client scope associated with the valid access token.</p>
+<p><em>QuerySet of AccessRange objects.</em></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="oauth2app.authenticate.Authenticator.user">
+<tt class="descname">user</tt><a class="headerlink" href="#oauth2app.authenticate.Authenticator.user" title="Permalink to this definition">¶</a></dt>
+<dd><p>The user associated with the valid access token.</p>
+<p><em>django.auth.User object</em></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="oauth2app.authenticate.Authenticator.validate">
+<tt class="descname">validate</tt><big>(</big><em>request</em><big>)</big><a class="reference internal" href="_modules/oauth2app/authenticate.html#Authenticator.validate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.authenticate.Authenticator.validate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Validate the request. Raises an AuthenticationException if the
+request fails authentication.</p>
+<p><strong>Args:</strong></p>
+<ul class="simple">
+<li><em>request:</em> Django HttpRequest object.</li>
+</ul>
+<p><em>Returns None</em></p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt id="oauth2app.authenticate.InsufficientScope">
+<em class="property">exception </em><tt class="descclassname">oauth2app.authenticate.</tt><tt class="descname">InsufficientScope</tt><a class="reference internal" href="_modules/oauth2app/authenticate.html#InsufficientScope"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.authenticate.InsufficientScope" title="Permalink to this definition">¶</a></dt>
+<dd><p>The request requires higher privileges than provided by the
+access token.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="oauth2app.authenticate.InvalidRequest">
+<em class="property">exception </em><tt class="descclassname">oauth2app.authenticate.</tt><tt class="descname">InvalidRequest</tt><a class="reference internal" href="_modules/oauth2app/authenticate.html#InvalidRequest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.authenticate.InvalidRequest" title="Permalink to this definition">¶</a></dt>
+<dd><p>The request is missing a required parameter, includes an
+unsupported parameter or parameter value, repeats the same
+parameter, uses more than one method for including an access
+token, or is otherwise malformed.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="oauth2app.authenticate.InvalidToken">
+<em class="property">exception </em><tt class="descclassname">oauth2app.authenticate.</tt><tt class="descname">InvalidToken</tt><a class="reference internal" href="_modules/oauth2app/authenticate.html#InvalidToken"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.authenticate.InvalidToken" title="Permalink to this definition">¶</a></dt>
+<dd><p>The access token provided is expired, revoked, malformed, or
+invalid for other reasons.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="oauth2app.authenticate.JSONAuthenticator">
+<em class="property">class </em><tt class="descclassname">oauth2app.authenticate.</tt><tt class="descname">JSONAuthenticator</tt><big>(</big><em>scope=None</em><big>)</big><a class="reference internal" href="_modules/oauth2app/authenticate.html#JSONAuthenticator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.authenticate.JSONAuthenticator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wraps Authenticator, adds support for a callback parameter and
+JSON related. convenience methods.</p>
+<p><strong>Args:</strong></p>
+<ul class="simple">
+<li><em>request:</em> Django HttpRequest object.</li>
+</ul>
+<p><strong>Kwargs:</strong></p>
+<ul class="simple">
+<li><em>scope:</em> A iterable of oauth2app.models.AccessRange objects.</li>
+</ul>
+<dl class="method">
+<dt id="oauth2app.authenticate.JSONAuthenticator.error_response">
+<tt class="descname">error_response</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/oauth2app/authenticate.html#JSONAuthenticator.error_response"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.authenticate.JSONAuthenticator.error_response" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a HttpResponse object of JSON error data.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="oauth2app.authenticate.JSONAuthenticator.response">
+<tt class="descname">response</tt><big>(</big><em>data</em><big>)</big><a class="reference internal" href="_modules/oauth2app/authenticate.html#JSONAuthenticator.response"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.authenticate.JSONAuthenticator.response" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a HttpResponse object of JSON serialized data.</p>
+<p><strong>Args:</strong></p>
+<ul class="simple">
+<li><em>data:</em> Object to be JSON serialized and returned.</li>
+</ul>
+</dd></dl>
+
+<dl class="method">
+<dt id="oauth2app.authenticate.JSONAuthenticator.validate">
+<tt class="descname">validate</tt><big>(</big><em>request</em><big>)</big><a class="reference internal" href="_modules/oauth2app/authenticate.html#JSONAuthenticator.validate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.authenticate.JSONAuthenticator.validate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt id="oauth2app.authenticate.UnvalidatedRequest">
+<em class="property">exception </em><tt class="descclassname">oauth2app.authenticate.</tt><tt class="descname">UnvalidatedRequest</tt><a class="reference internal" href="_modules/oauth2app/authenticate.html#UnvalidatedRequest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.authenticate.UnvalidatedRequest" title="Permalink to this definition">¶</a></dt>
+<dd><p>The method requested requires a validated request to continue.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="to-do">
+<h2>To Do<a class="headerlink" href="#to-do" title="Permalink to this headline">¶</a></h2>
+<div class="admonition-todo admonition" id="index-0">
+<p class="first admonition-title">Todo</p>
+<p class="last">MAC Authentication</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Authentication</a><ul>
+<li><a class="reference internal" href="#authenticator">Authenticator</a></li>
+<li><a class="reference internal" href="#jsonauthenticator">JSONAuthenticator</a></li>
+<li><a class="reference internal" href="#module-oauth2app.authenticate">Module Reference</a></li>
+<li><a class="reference internal" href="#to-do">To Do</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="authorize.html"
+                        title="previous chapter">Authorization</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="token.html"
+                        title="next chapter">Access Token Generation</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/authenticate.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="token.html" title="Access Token Generation"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="authorize.html" title="Authorization"
+             >previous</a> |</li>
+        <li><a href="index.html">Django OAuth 2.0 Server App v0.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, John Wehr.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+    </div>
+  </body>
+</html>
