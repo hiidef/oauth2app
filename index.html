@@ -1,0 +1,317 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Django OAuth 2.0 Server App &mdash; Django OAuth 2.0 Server App v0.1.0 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Django OAuth 2.0 Server App v0.1.0 documentation" href="#" />
+    <link rel="next" title="Authorization" href="authorize.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="authorize.html" title="Authorization"
+             accesskey="N">next</a> |</li>
+        <li><a href="#">Django OAuth 2.0 Server App v0.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="django-oauth-2-0-server-app">
+<h1>Django OAuth 2.0 Server App<a class="headerlink" href="#django-oauth-2-0-server-app" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="about">
+<h2>About<a class="headerlink" href="#about" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>See <a class="reference external" href="http://hiidef.github.com/oauth2app">http://hiidef.github.com/oauth2app</a> for documentation.</li>
+<li>See <a class="reference external" href="https://github.com/hiidef/oauth2app">https://github.com/hiidef/oauth2app</a> for source code.</li>
+<li>Based on <a class="reference external" href="http://code.google.com/p/django-oauth2">http://code.google.com/p/django-oauth2</a></li>
+<li>Support for OAuth 2.0 draft 16, <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-oauth-v2-16">http://tools.ietf.org/html/draft-ietf-oauth-v2-16</a></li>
+</ul>
+</div>
+<div class="section" id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
+<p>If easy_install is available, you can use:</p>
+<div class="highlight-python"><pre>easy_install https://github.com/hiidef/oauth2app/tarball/master</pre>
+</div>
+</div>
+<div class="section" id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>The oauth2app module helps Django site operators provide an OAuth 2.0 interface. The module
+is registered as an application.</p>
+<p>In settings.py, add &#8216;oauth2app&#8217; to INSTALLED_APPS.</p>
+<div class="highlight-python"><pre>INSTALLED_APPS = (
+    ...,
+    'oauth2app'
+)</pre>
+</div>
+<p>Sync the DB models.</p>
+<div class="highlight-python"><pre>python manage.py syncdb</pre>
+</div>
+<p>In urls.py, add /oauth2/authorize and /oauth2/token views to a new or existing app.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">urlpatterns</span> <span class="o">+=</span> <span class="n">patterns</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">,</span>
+    <span class="p">(</span><span class="s">r&#39;^oauth2/missing_redirect_uri/?$&#39;</span><span class="p">,</span>   <span class="s">&#39;mysite.oauth2.views.missing_redirect_uri&#39;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">r&#39;^oauth2/authorize/?$&#39;</span><span class="p">,</span>                <span class="s">&#39;mysite.oauth2.views.authorize&#39;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">r&#39;^oauth2/token/?$&#39;</span><span class="p">,</span>                    <span class="s">&#39;oauth2app.token.handler&#39;</span><span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Create client models.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">oauth2app.models</span> <span class="kn">import</span> <span class="n">Client</span>
+
+<span class="n">Client</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s">&quot;My Sample OAuth 2.0 Client&quot;</span><span class="p">,</span>
+    <span class="n">user</span><span class="o">=</span><span class="n">user</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Create authorize and missing_redirect_uri handlers.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">django.shortcuts</span> <span class="kn">import</span> <span class="n">render_to_response</span>
+<span class="kn">from</span> <span class="nn">django.http</span> <span class="kn">import</span> <span class="n">HttpResponseRedirect</span>
+<span class="kn">from</span> <span class="nn">django.template</span> <span class="kn">import</span> <span class="n">RequestContext</span>
+<span class="kn">from</span> <span class="nn">django.contrib.auth.decorators</span> <span class="kn">import</span> <span class="n">login_required</span>
+<span class="kn">from</span> <span class="nn">oauth2app.authorize</span> <span class="kn">import</span> <span class="n">Authorizer</span><span class="p">,</span> <span class="n">MissingRedirectURI</span><span class="p">,</span> <span class="n">AuthorizationException</span>
+<span class="kn">from</span> <span class="nn">django</span> <span class="kn">import</span> <span class="n">forms</span>
+
+<span class="k">class</span> <span class="nc">AuthorizeForm</span><span class="p">(</span><span class="n">forms</span><span class="o">.</span><span class="n">Form</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+<span class="nd">@login_required</span>
+<span class="k">def</span> <span class="nf">missing_redirect_uri</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">render_to_response</span><span class="p">(</span>
+        <span class="s">&#39;oauth2/missing_redirect_uri.html&#39;</span><span class="p">,</span>
+        <span class="p">{},</span>
+        <span class="n">RequestContext</span><span class="p">(</span><span class="n">request</span><span class="p">))</span>
+
+<span class="nd">@login_required</span>
+<span class="k">def</span> <span class="nf">authorize</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="n">authorizer</span> <span class="o">=</span> <span class="n">Authorizer</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">authorizer</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">MissingRedirectURI</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">HttpResponseRedirect</span><span class="p">(</span><span class="s">&quot;/oauth2/missing_redirect_uri&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">AuthorizationException</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+        <span class="c"># The request is malformed or invalid. Automatically</span>
+        <span class="c"># redirects to the provided redirect URL.</span>
+        <span class="k">return</span> <span class="n">authorizer</span><span class="o">.</span><span class="n">error_redirect</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s">&#39;GET&#39;</span><span class="p">:</span>
+        <span class="n">template</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c"># Use any form, make sure it has CSRF protections.</span>
+        <span class="n">template</span><span class="p">[</span><span class="s">&quot;form&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">AuthorizeForm</span><span class="p">()</span>
+        <span class="c"># Appends the original OAuth2 parameters.</span>
+        <span class="n">template</span><span class="p">[</span><span class="s">&quot;form_action&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;/oauth2/authorize?</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">authorizer</span><span class="o">.</span><span class="n">query_string</span>
+        <span class="k">return</span> <span class="n">render_to_response</span><span class="p">(</span>
+            <span class="s">&#39;oauth2/authorize.html&#39;</span><span class="p">,</span>
+            <span class="n">template</span><span class="p">,</span>
+            <span class="n">RequestContext</span><span class="p">(</span><span class="n">request</span><span class="p">))</span>
+    <span class="k">elif</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s">&#39;POST&#39;</span><span class="p">:</span>
+        <span class="n">form</span> <span class="o">=</span> <span class="n">AuthorizeForm</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">form</span><span class="o">.</span><span class="n">is_valid</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;connect&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s">&quot;Yes&quot;</span><span class="p">:</span>
+                <span class="c"># User agrees. Redirect to redirect_uri with success params.</span>
+                <span class="k">return</span> <span class="n">authorizer</span><span class="o">.</span><span class="n">grant_redirect</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c"># User refuses. Redirect to redirect_uri with error params.</span>
+                <span class="k">return</span> <span class="n">authorizer</span><span class="o">.</span><span class="n">error_redirect</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">HttpResponseRedirect</span><span class="p">(</span><span class="s">&quot;/&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Authenticate requests.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">oauth2app.authenticate</span> <span class="kn">import</span> <span class="n">Authenticator</span><span class="p">,</span> <span class="n">AuthenticationException</span>
+<span class="kn">from</span> <span class="nn">django.http</span> <span class="kn">import</span> <span class="n">HttpResponse</span>
+
+<span class="k">def</span> <span class="nf">test</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="n">authenticator</span> <span class="o">=</span> <span class="n">Authenticator</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c"># Validate the request.</span>
+        <span class="n">authenticator</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">AuthenticationException</span><span class="p">:</span>
+        <span class="c"># Return an error response.</span>
+        <span class="k">return</span> <span class="n">authenticator</span><span class="o">.</span><span class="n">error_response</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="s">&quot;You didn&#39;t authenticate.&quot;</span><span class="p">)</span>
+    <span class="n">username</span> <span class="o">=</span> <span class="n">authenticator</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">username</span>
+    <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="s">&quot;Hi </span><span class="si">%s</span><span class="s">, You authenticated!&quot;</span> <span class="o">%</span> <span class="n">username</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>If you want to authenticate JSON requests try the JSONAuthenticator.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">oauth2app.authenticate</span> <span class="kn">import</span> <span class="n">JSONAuthenticator</span><span class="p">,</span> <span class="n">AuthenticationException</span>
+
+<span class="k">def</span> <span class="nf">test</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="n">authenticator</span> <span class="o">=</span> <span class="n">JSONAuthenticator</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c"># Validate the request.</span>
+        <span class="n">authenticator</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">AuthenticationException</span><span class="p">:</span>
+        <span class="c"># Return a JSON encoded error response.</span>
+        <span class="k">return</span> <span class="n">authenticator</span><span class="o">.</span><span class="n">error_response</span><span class="p">()</span>
+    <span class="n">username</span> <span class="o">=</span> <span class="n">authenticator</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">userame</span>
+    <span class="c"># Return a JSON encoded response.</span>
+    <span class="k">return</span> <span class="n">authenticator</span><span class="o">.</span><span class="n">response</span><span class="p">({</span><span class="s">&quot;username&quot;</span><span class="p">:</span><span class="n">username</span><span class="p">})</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
+<p>An <a class="reference external" href="https://github.com/hiidef/oauth2app/tree/develop/examples/mysite">example Django project</a> demonstrating client and server functionality is available in the repository.</p>
+<p><a class="reference external" href="https://github.com/hiidef/oauth2app/tree/develop/examples/mysite">https://github.com/hiidef/oauth2app/tree/develop/examples/mysite</a></p>
+</div>
+<div class="section" id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="authorize.html">Authorization</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="authorize.html#authorizer">Authorizer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="authorize.html#module-oauth2app.authorize">Module Reference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="authenticate.html">Authentication</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="authenticate.html#authenticator">Authenticator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="authenticate.html#jsonauthenticator">JSONAuthenticator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="authenticate.html#module-oauth2app.authenticate">Module Reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="authenticate.html#to-do">To Do</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="token.html">Access Token Generation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="token.html#tokengenerator">TokenGenerator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="token.html#module-oauth2app.token">Module Reference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">Models</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="models.html#module-oauth2app.models">Module Reference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="settings.html">Settings</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="settings.html#client-key-length">Client Key Length</a></li>
+<li class="toctree-l2"><a class="reference internal" href="settings.html#client-secret-length">Client Secret Length</a></li>
+<li class="toctree-l2"><a class="reference internal" href="settings.html#code-key-length">Code Key Length</a></li>
+<li class="toctree-l2"><a class="reference internal" href="settings.html#mac-key-length">MAC Key Length</a></li>
+<li class="toctree-l2"><a class="reference internal" href="settings.html#access-token-length">Access Token Length</a></li>
+<li class="toctree-l2"><a class="reference internal" href="settings.html#refresh-token-length">Refresh Token Length</a></li>
+<li class="toctree-l2"><a class="reference internal" href="settings.html#refreshable-tokens">Refreshable Tokens</a></li>
+<li class="toctree-l2"><a class="reference internal" href="settings.html#authorization-code-expiration">Authorization Code Expiration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="settings.html#access-token-expiration">Access Token Expiration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="settings.html#authentication-method">Authentication method</a></li>
+<li class="toctree-l2"><a class="reference internal" href="settings.html#realm">Realm</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="tests">
+<h2>Tests<a class="headerlink" href="#tests" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>See <a class="reference external" href="https://github.com/hiidef/oauth2app/tree/develop/tests/testsite">https://github.com/hiidef/oauth2app/tree/develop/tests/testsite</a></li>
+</ul>
+<p>The test site uses django.db.backends.sqlite3 and requires minimal configuration.</p>
+<div class="highlight-python"><pre>git clone git@github.com:hiidef/oauth2app.git oauth2app
+cd oauth2app/tests/testsite
+git checkout master
+pip install https://github.com/hiidef/oauth2app/tarball/master django-test-coverage
+python manage.py test api</pre>
+</div>
+</div>
+<div class="section" id="to-do">
+<h2>To Do<a class="headerlink" href="#to-do" title="Permalink to this headline">¶</a></h2>
+<div class="admonition-todo admonition" id="index-0">
+<p class="first admonition-title">Todo</p>
+<p class="last">MAC Authentication</p>
+</div>
+<p class="todo-source">(The <a class="reference internal" href="authenticate.html#index-0"><em>original entry</em></a> is located in  authenticate.rst, line 65.)</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Django OAuth 2.0 Server App</a><ul>
+<li><a class="reference internal" href="#about">About</a></li>
+<li><a class="reference internal" href="#installation">Installation</a></li>
+<li><a class="reference internal" href="#introduction">Introduction</a></li>
+<li><a class="reference internal" href="#examples">Examples</a></li>
+<li><a class="reference internal" href="#usage">Usage</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#tests">Tests</a></li>
+<li><a class="reference internal" href="#to-do">To Do</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Next topic</h4>
+  <p class="topless"><a href="authorize.html"
+                        title="next chapter">Authorization</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/index.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="authorize.html" title="Authorization"
+             >next</a> |</li>
+        <li><a href="#">Django OAuth 2.0 Server App v0.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, John Wehr.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+    </div>
+  </body>
+</html>

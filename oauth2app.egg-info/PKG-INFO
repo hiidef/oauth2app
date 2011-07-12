@@ -1,0 +1,11 @@
+Metadata-Version: 1.0
+Name: oauth2app
+Version: 0.1.0
+Summary: Django OAuth 2.0 Server App
+Home-page: https://github.com/hiidef/oauth2app
+Author: John Wehr
+Author-email: johnwehr@gmail.com
+License: MIT License
+Description: UNKNOWN
+Keywords: django oauth2 oauth app server
+Platform: UNKNOWN
