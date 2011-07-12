@@ -11,19 +11,199 @@
 
 @import url("basic.css");
 
+/* -- HiiDef Stuff ----------------------------------------------------------- */
+
+
+#header, #main, #footer {
+	width:960px;
+	padding:0 0 0 20px;
+	margin:0;
+	}
+
+.hd_hidden {
+	display:none;
+	}
+		
+#header {
+	background-color: #222525;
+	height:218px;
+	top:0;
+	left:0;
+	}
+
+#footer {
+	background-color: #2e3131;
+	color:#636363;
+	height:176px;
+	padding-top: 20px;
+	}
+
+#hero {
+	background-color: #2e3131;
+	color:#888;
+	height:134px;
+	position: relative;
+	width:980px;
+	margin:0 0 0 -20px;
+	}
+	
+	#hero h2 {
+	position: absolute;
+	left:20px;
+	bottom:0px;
+	}
+	
+	#hero a, .hd_highlight, #hero h2 span  {
+	color:white;
+	}
+	
+	#hero h2 span:hover {
+	text-decoration: underline;
+	cursor: pointer;
+	}
+
+.hd_topnav {
+	height:42px;
+	line-height: 42px;
+	padding:0 20px 0 0;
+	margin:0
+	}
+	
+.hd_topnav li {
+	display: inline;
+	margin-right:33px;
+	}
+	
+	.hd_topnav a:link, .hd_topnav a:visited, #footer p {
+		text-transform: uppercase;
+		font-size: 10px;
+		color:#636363;	
+		font-family:Helvetica, Arial, sans-serif;
+		text-decoration: none;
+		letter-spacing: 0px;
+		display: inline-block;
+		height:42px;
+		}
+	
+	.hd_topnav a:hover, .hd_topnav li.active a {
+		color:#ccc;
+		text-decoration: none;
+		}
+		
+	.hd_topnav li.contact {
+		float:right;
+		margin: 0;
+		}
+
+	.hd_related {
+		position:absolute;
+		font-size:10px;
+		text-transform: uppercase;
+		color:#636363;
+		top:193px;
+		left:0px;
+		width:980px;
+		margin:0;
+		padding:0;
+		height:42px;
+	}
+	.hd_related li a {
+		color:#636363;	
+	}
+	.hd_related li a:hover {
+		color:#ccc;
+		text-decoration: none;
+		}
+	.hd_related ul, .hd_related ul.right {
+		position:absolute;
+		top:0px;
+		margin:0 0 0 19px;
+		padding:0;
+		z-index:200;
+	}
+	.hd_related ul.right {
+		right:10px;
+		z-index:201;
+	}
+	.hd_related ul li {
+		float:left;
+		list-style-type:none;
+		margin:0;
+		padding:0 0px 0 0px;
+	}	
+	.hd_related ul.right li {
+		float:right;
+	}
+#main {
+	position: relative;
+	background:transparent url(http://hiidef.github.com/assets/images/main_bg.png) top left repeat-y;
+	padding:0px 35px 0px 0px;
+	margin:70px 0 70px 0;
+	width:980px;
+	min-height: 300px;
+	}
+	
+	#main div.hd_top, #main div.hd_bottom {
+		height:70px;
+		width:1015px;
+		position: absolute;
+		left:0px;
+		}
+	
+	#main div.hd_top {
+		top:-70px;
+		background: transparent url(http://hiidef.github.com/assets/images/main_top.png) bottom left no-repeat;
+		}
+		
+	#main div.hd_bottom {
+		bottom:-70px;
+		background: transparent url(http://hiidef.github.com/assets/images/main_bottom.png) top left no-repeat;
+		}
+
+h1.hd {
+	margin:0;
+	padding:0;
+}
+
+h1.hd a {
+	display: block;
+	float:left;
+	width:72px;
+	height:17px;
+	margin:12px 62px 0 0;
+	background: url(http://hiidef.github.com/assets/images/topnav_logo.png) top left no-repeat;
+	}	
+
+h1.hd a:hover {
+	background: url(http://hiidef.github.com/assets/images/topnav_logo.png) bottom left no-repeat;
+	}
+
+h2.hd, h2.hd p, h2.hd span {
+	font-size: 30px;
+	letter-spacing: 0px;
+	line-height: 110%;	
+	font-family:"Helvetica Neue Bold", Helvetica, Arial, sans-serif;
+	
+	}
+
+
+
+
 /* -- page layout ----------------------------------------------------------- */
 
 body {
-    font-family: sans-serif;
+    font-family:"Helvetica Neue Bold", Helvetica, Arial, sans-serif;
     font-size: 100%;
-    background-color: #11303d;
+ 	background: #dcdcdc url(http://hiidef.github.com/assets/images/bg.png);
+	background-attachment: fixed;
     color: #000;
     margin: 0;
     padding: 0;
 }
 
 div.document {
-    background-color: #1c4e63;
+	padding:0 0 0 15px;
+	font-family:"Lucida Sans Unicode","Lucida Grande",Verdana,Arial,Helvetica,sans-serif;
 }
 
 div.documentwrapper {
@@ -32,98 +212,120 @@ div.documentwrapper {
 }
 
 div.bodywrapper {
-    margin: 0 0 0 230px;
+    margin: 0 240px 0 0;
 }
 
 div.body {
-    background-color: #ffffff;
-    color: #000000;
-    padding: 0 20px 30px 20px;
+    color: #314359;
+    padding: 0 10px 0px 10px;
+	font-size:14px;
 }
 
-div.footer {
-    color: #ffffff;
-    width: 100%;
-    padding: 9px 0 9px 0;
-    text-align: center;
-    font-size: 75%;
-}
 
-div.footer a {
-    color: #ffffff;
-    text-decoration: underline;
-}
-
-div.related {
-    background-color: #133f52;
-    line-height: 30px;
-    color: #ffffff;
-}
-
-div.related a {
-    color: #ffffff;
-}
 
 div.sphinxsidebar {
+    float: right;
+	font-size:100%;
 }
 
-div.sphinxsidebar h3 {
-    font-family: 'Trebuchet MS', sans-serif;
-    color: #ffffff;
-    font-size: 1.4em;
-    font-weight: normal;
+div.sphinxsidebar h3, div.sphinxsidebar h4 {
+    font-family:"Helvetica Neue Bold", Helvetica, Arial, sans-serif;
+    color: #009FDB;
+    font-size: 20px;
+    font-weight: bold;
     margin: 0;
     padding: 0;
 }
 
-div.sphinxsidebar h3 a {
-    color: #ffffff;
-}
-
-div.sphinxsidebar h4 {
-    font-family: 'Trebuchet MS', sans-serif;
-    color: #ffffff;
-    font-size: 1.3em;
-    font-weight: normal;
-    margin: 5px 0 0 0;
-    padding: 0;
+div.sphinxsidebar h3 a, div.sphinxsidebar h4 a {
+    color: #009FDB;
 }
 
 div.sphinxsidebar p {
-    color: #ffffff;
+    color: #314359;
 }
 
 div.sphinxsidebar p.topless {
-    margin: 5px 10px 10px 10px;
+	font-size: 12px;
+    margin: 10px 10px 15px 0px;
+    padding: 0;
+}
+
+div.sphinxsidebar p.searchtip {
+	font-size: 10px;
+	color:#aaaaaa;
 }
 
 div.sphinxsidebar ul {
-    margin: 10px;
+	font-size: 12px;
+    margin: 10px 10px 15px 0px;
     padding: 0;
-    color: #ffffff;
+    color: #314359;
 }
 
-div.sphinxsidebar a {
-    color: #98dbcc;
+div.sphinxsidebar ul ul {
+	font-size: 11px;
+	margin-top: 10px;
+}
+
+div.sphinxsidebar ul ul li {
+	list-style-type:none;
+}
+
+div.sphinxsidebar ul li {
+    margin: 0px 0px 10px 0px;
+}
+
+div.sphinxsidebar ul li a {
+    color: #009FDB;
+    text-decoration: none;
+}
+
+div.sphinxsidebar ul li a:visited {
+    color: #657F8E;
+    text-decoration: none;
 }
 
 div.sphinxsidebar input {
-    border: 1px solid #98dbcc;
+    border: 1px solid #cccccc;
     font-family: sans-serif;
-    font-size: 1em;
+	font-weight:bold;
+    font-size: 14px;
+	padding:5px;
+	margin:0;
+	color:#666666;
+	background-color:#fafafc;
 }
 
+div.sphinxsidebar input.image {
+    border: none;
+	margin:5px 0 0 0;
+	padding:0;
+	position:relative;
+	top:9px;
+	opacity:0.5;
+	filter:alpha(opacity=50);
+	background-color:none;
+}
 
+div.sphinxsidebar form {
+	margin-top:0;
+}
+
+div.sphinxsidebar input.image:hover {
+	opacity:1;
+	filter:alpha(opacity=100);
+}
 
 /* -- hyperlink styles ------------------------------------------------------ */
 
 a {
-    color: #355f7c;
+    color: #009FDB;
     text-decoration: none;
 }
 
 a:visited {
-    color: #355f7c;
+    color: #657F8E;
     text-decoration: none;
 }
 
@@ -141,20 +343,18 @@ div.body h3,
 div.body h4,
 div.body h5,
 div.body h6 {
-    font-family: 'Trebuchet MS', sans-serif;
-    background-color: #f2f2f2;
+    font-family:"Helvetica Neue Bold", Helvetica, Arial, sans-serif;
+    color: #009FDB;
     font-weight: normal;
-    color: #20435c;
-    border-bottom: 1px solid #ccc;
-    margin: 20px -20px 10px -20px;
+    margin: 20px -10px 10px -10px;
     padding: 3px 0 3px 10px;
 }
 
-div.body h1 { margin-top: 0; font-size: 200%; }
-div.body h2 { font-size: 160%; }
-div.body h3 { font-size: 140%; }
-div.body h4 { font-size: 120%; }
-div.body h5 { font-size: 110%; }
+div.body h1 { margin-top: 0; font-size: 20px; font-weight:bold; }
+div.body h2 { font-size: 18px; }
+div.body h3 { font-size: 100%; }
+div.body h4 { font-size: 100%; }
+div.body h5 { font-size: 100%; }
 div.body h6 { font-size: 100%; }
 
 a.headerlink {
@@ -218,13 +418,15 @@ p.admonition-title:after {
 }
 
 pre {
-    padding: 5px;
     background-color: #eeffcc;
     color: #333333;
     line-height: 120%;
     border: 1px solid #ac9;
     border-left: none;
     border-right: none;
+	font-size:12px;
+	padding:10px 10px 10px 10px;
+	width:685px;
 }
 
 tt {
@@ -245,12 +447,33 @@ th {
     background: #d6d6d6;
 }
 
-.viewcode-back {
-    font-family: sans-serif;
+div.viewcode-block {
+	padding:0px;
+	width:100%;
 }
 
 div.viewcode-block:target {
     background-color: #f4debf;
     border-top: 1px solid #ac9;
     border-bottom: 1px solid #ac9;
+	padding:10px 10px 0 ;
+	margin: -1px -10px;
+}
+
+dt {
+	padding:0 0 10px 0;
+}
+
+dt, tt.descname, tt.descclassname, em.property {
+	font-family:monospace;
+	font-size:100%;
+	font-weight:normal;
+	font-style:normal;
+	color:#777777;
+}
+
+tt.xref {
+	font-family:monospace;
+	font-size:100%;
+	font-weight:normal;
 }
