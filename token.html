@@ -1,17 +1,15 @@
 
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
     <title>Access Token Generation &mdash; Django OAuth 2.0 Server App v0.1.0 documentation</title>
-    
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
@@ -29,42 +27,25 @@
     <link rel="prev" title="Authentication" href="authenticate.html" /> 
   </head>
   <body>
-	<div id="header">
-	     <h1 class="hd"><a href="http://hiidef.com/" onclick="return false" title="HiiDef Inc."><span class="hd_hidden">HiiDef Inc.</span></a></h1>
-	     <ul class="hd_topnav">
-			<li><a href="http://hiidef.com/products" title="Products">Products</a></li>
-	         <li><a href="http://hiidef.com/team" title="Team">Team</a></li>
-	         <li><a href="http://blog.hiidef.com" title="Blog">Blog</a></li>
-	         <li><a href="http://hiidef.com/jobs" title="Jobs">Jobs</a></li>
-			 <li><a href="http://hiidef.github.com/" title="Code">Code</a></li>
-	         <li class="contact"><a href="mailto:hello@hiidef.com">hello@hiidef.com</a></li>
-	     </ul>
-	     <div id="hero">
-	         <h2 class="hd">Access Token Generation</h2>
-	     </div>
-    <div class="hd_related">
-      <ul class="right">
-        <li style="margin-right: 10px">
-          &nbsp;<a href="genindex.html" title="General Index"
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
-        <li >
-          &nbsp;<a href="py-modindex.html" title="Python Module Index"
-             >modules</a>&nbsp; |&nbsp;</li>
-        <li >
-          &nbsp;<a href="models.html" title="Models"
-             accesskey="N">next</a>&nbsp; |&nbsp;</li>
-        <li >
-          &nbsp;<a href="authenticate.html" title="Authentication"
-             accesskey="P">previous</a>&nbsp; |&nbsp;</li>
-	  </ul>
-	  <ul>
-        <li>&nbsp;<a href="index.html">Django OAuth 2.0 Server App v0.1.0 documentation</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="models.html" title="Models"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="authenticate.html" title="Authentication"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Django OAuth 2.0 Server App v0.1.0 documentation</a> &raquo;</li> 
       </ul>
-    </div>
-	 </div>
-	
-<div id="main">
-<div class="hd_top"></div>  
+    </div>  
+
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
@@ -83,16 +64,29 @@ grant types, specified through the grant_type request parameter.</p>
 <li><strong>client_credentials:</strong> Grants an access token based specific to the client to access internal resources.</li>
 </ul>
 <p>Connect the handler method to the access endpoint.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">django.conf.urls.defaults</span> <span class="kn">import</span> <span class="n">patterns</span><span class="p">,</span> <span class="n">url</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">django.conf.urls.defaults</span> <span class="kn">import</span> <span class="n">patterns</span>
 
 <span class="n">urlpatterns</span> <span class="o">=</span> <span class="n">patterns</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">,</span>
     <span class="p">(</span><span class="s">r&#39;^oauth2/token/?$&#39;</span><span class="p">,</span>  <span class="s">&#39;oauth2app.token.handler&#39;</span><span class="p">),</span>
 <span class="p">)</span>
 </pre></div>
 </div>
+<p>To set token handler parameters, you can also use the TokenGenerator callable.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">django.conf.urls.defaults</span> <span class="kn">import</span> <span class="n">patterns</span>
+<span class="kn">from</span> <span class="nn">oauth2app.token</span> <span class="kn">import</span> <span class="n">TokenGenerator</span>
+<span class="kn">from</span> <span class="nn">oauth2app.consts</span> <span class="kn">import</span> <span class="n">MAC</span>
+
+<span class="n">oauth2_token_generator</span> <span class="o">=</span> <span class="n">TokenGenerator</span><span class="p">(</span><span class="n">authentication_method</span><span class="o">=</span><span class="n">MAC</span><span class="p">,</span> <span class="n">refreshable</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+
+<span class="n">urlpatterns</span> <span class="o">=</span> <span class="n">patterns</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">,</span>
+        <span class="p">(</span><span class="s">r&#39;^token/?$&#39;</span><span class="p">,</span>  <span class="n">oauth2_token_generator</span><span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
 </div>
 <div class="section" id="module-oauth2app.token">
 <span id="module-reference"></span><h2>Module Reference<a class="headerlink" href="#module-oauth2app.token" title="Permalink to this headline">¶</a></h2>
+<p>OAuth 2.0 Token Generation</p>
 <dl class="exception">
 <dt id="oauth2app.token.AccessTokenException">
 <em class="property">exception </em><tt class="descclassname">oauth2app.token.</tt><tt class="descname">AccessTokenException</tt><a class="reference internal" href="_modules/oauth2app/token.html#AccessTokenException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.token.AccessTokenException" title="Permalink to this definition">¶</a></dt>
@@ -134,19 +128,29 @@ exceeds the scope granted by the resource owner.</p>
 
 <dl class="class">
 <dt id="oauth2app.token.TokenGenerator">
-<em class="property">class </em><tt class="descclassname">oauth2app.token.</tt><tt class="descname">TokenGenerator</tt><big>(</big><em>request</em>, <em>scope=None</em><big>)</big><a class="reference internal" href="_modules/oauth2app/token.html#TokenGenerator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.token.TokenGenerator" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">oauth2app.token.</tt><tt class="descname">TokenGenerator</tt><big>(</big><em>scope=None</em>, <em>authentication_method=1</em>, <em>refreshable=True</em><big>)</big><a class="reference internal" href="_modules/oauth2app/token.html#TokenGenerator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.token.TokenGenerator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Token access handler. Validates authorization codes, refresh tokens,
 username/password pairs, and generates a JSON formatted authorization code.</p>
 <p><strong>Args:</strong></p>
 <ul class="simple">
 <li><em>request:</em> Django HttpRequest object.</li>
 </ul>
+<p><strong>Kwargs:</strong></p>
+<ul class="simple">
+<li><em>scope:</em> An iterable of oauth2app.models.AccessRange objects representing
+the scope the token generator will grant. <em>Default None</em></li>
+<li><em>authentication_method:</em> Type of token to generate. Possible
+values are: oauth2app.consts.MAC and oauth2app.consts.BEARER
+<em>Default oauth2app.consts.BEARER</em></li>
+<li><em>refreshable:</em> Boolean value indicating whether issued tokens are 
+refreshable. <em>Default True</em></li>
+</ul>
 <dl class="method">
 <dt id="oauth2app.token.TokenGenerator.error_response">
 <tt class="descname">error_response</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/oauth2app/token.html#TokenGenerator.error_response"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.token.TokenGenerator.error_response" title="Permalink to this definition">¶</a></dt>
-<dd><p>In the event of an error, return a Django HttpResponseBadRequest
+<dd><p>In the event of an error, return a Django HttpResponse
 with the appropriate JSON encoded error parameters.</p>
-<p><em>Returns HttpResponseBadRequest</em></p>
+<p><em>Returns HttpResponse</em></p>
 </dd></dl>
 
 <dl class="method">
@@ -158,7 +162,7 @@ with the appropriate JSON encoded error parameters.</p>
 <dl class="method">
 <dt id="oauth2app.token.TokenGenerator.validate">
 <tt class="descname">validate</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/oauth2app/token.html#TokenGenerator.validate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.token.TokenGenerator.validate" title="Permalink to this definition">¶</a></dt>
-<dd><p>Validate the request. Raises an AccessTokenException if the 
+<dd><p>Validate the request. Raises an AccessTokenException if the
 request fails authorization.</p>
 <p><em>Returns None</em></p>
 </dd></dl>
@@ -188,8 +192,8 @@ authorization server.</p>
 <dl class="function">
 <dt id="oauth2app.token.handler">
 <tt class="descclassname">oauth2app.token.</tt><tt class="descname">handler</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/oauth2app/token.html#handler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.token.handler" title="Permalink to this definition">¶</a></dt>
-<dd><p>Django view that handles the token endpoint. Returns a JSON formatted 
-authorization code.</p>
+<dd><p>Token access handler. Conveneince function that wraps the Handler() 
+callable.</p>
 <p><strong>Args:</strong></p>
 <ul class="simple">
 <li><em>request:</em> Django HttpRequest object.</li>
@@ -220,30 +224,49 @@ authorization code.</p>
   <h4>Next topic</h4>
   <p class="topless"><a href="models.html"
                         title="next chapter">Models</a></p>
-			<div id="searchbox" style="display: none">
-			  <h3>Quick search</h3>
-			    <form class="search" action="search.html" method="get">
-			      <input type="text" name="q" size="18" />
-			      <input type="image" class="image" src="_static/search.gif" />
-			      <input type="hidden" name="check_keywords" value="yes" />
-			      <input type="hidden" name="area" value="default" />
-			    </form>
-			    <p class="searchtip">
-			    Enter search terms or a module, class or function name.
-			    </p>
-			</div>
-		
-			<script type="text/javascript">$('#searchbox').show(0);</script>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/token.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-<div class="hd_bottom"></div>
-</div>
-
-	
-	<div id="footer">
-        <p>&copy; 2008-2011 HiiDef</p>
-    </div><!-- /footer -->
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="models.html" title="Models"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="authenticate.html" title="Authentication"
+             >previous</a> |</li>
+        <li><a href="index.html">Django OAuth 2.0 Server App v0.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, John Wehr.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+    </div>
   </body>
 </html>

@@ -1,17 +1,15 @@
 
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
     <title>Models &mdash; Django OAuth 2.0 Server App v0.1.0 documentation</title>
-    
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
@@ -29,42 +27,25 @@
     <link rel="prev" title="Access Token Generation" href="token.html" /> 
   </head>
   <body>
-	<div id="header">
-	     <h1 class="hd"><a href="http://hiidef.com/" onclick="return false" title="HiiDef Inc."><span class="hd_hidden">HiiDef Inc.</span></a></h1>
-	     <ul class="hd_topnav">
-			<li><a href="http://hiidef.com/products" title="Products">Products</a></li>
-	         <li><a href="http://hiidef.com/team" title="Team">Team</a></li>
-	         <li><a href="http://blog.hiidef.com" title="Blog">Blog</a></li>
-	         <li><a href="http://hiidef.com/jobs" title="Jobs">Jobs</a></li>
-			 <li><a href="http://hiidef.github.com/" title="Code">Code</a></li>
-	         <li class="contact"><a href="mailto:hello@hiidef.com">hello@hiidef.com</a></li>
-	     </ul>
-	     <div id="hero">
-	         <h2 class="hd">Models</h2>
-	     </div>
-    <div class="hd_related">
-      <ul class="right">
-        <li style="margin-right: 10px">
-          &nbsp;<a href="genindex.html" title="General Index"
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
-        <li >
-          &nbsp;<a href="py-modindex.html" title="Python Module Index"
-             >modules</a>&nbsp; |&nbsp;</li>
-        <li >
-          &nbsp;<a href="settings.html" title="Settings"
-             accesskey="N">next</a>&nbsp; |&nbsp;</li>
-        <li >
-          &nbsp;<a href="token.html" title="Access Token Generation"
-             accesskey="P">previous</a>&nbsp; |&nbsp;</li>
-	  </ul>
-	  <ul>
-        <li>&nbsp;<a href="index.html">Django OAuth 2.0 Server App v0.1.0 documentation</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="settings.html" title="Settings"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="token.html" title="Access Token Generation"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Django OAuth 2.0 Server App v0.1.0 documentation</a> &raquo;</li> 
       </ul>
-    </div>
-	 </div>
-	
-<div id="main">
-<div class="hd_top"></div>  
+    </div>  
+
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
@@ -74,6 +55,7 @@
 <h1>Models<a class="headerlink" href="#models" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="module-oauth2app.models">
 <span id="module-reference"></span><h2>Module Reference<a class="headerlink" href="#module-oauth2app.models" title="Permalink to this headline">¶</a></h2>
+<p>OAuth 2.0 Django Models</p>
 <dl class="class">
 <dt id="oauth2app.models.AccessRange">
 <em class="property">class </em><tt class="descclassname">oauth2app.models.</tt><tt class="descname">AccessRange</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/oauth2app/models.html#AccessRange"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.models.AccessRange" title="Permalink to this definition">¶</a></dt>
@@ -125,6 +107,7 @@ token requests.</li>
 character random string</em></li>
 <li><em>refresh_token:</em> A string representing the access key token. <em>Default 10 
 character random string</em></li>
+<li><em>mac_key:</em> A string representing the MAC key. <em>Default None</em></li>
 <li><em>expire:</em> A positive integer timestamp representing the access token&#8217;s 
 expiration time.</li>
 <li><em>scope:</em> A list of oauth2app.models.AccessRange objects. <em>Default None</em></li>
@@ -144,6 +127,11 @@ refreshable. <em>Default False</em></li>
 <dl class="attribute">
 <dt id="oauth2app.models.AccessToken.client">
 <tt class="descclassname">AccessToken.</tt><tt class="descname">client</tt><a class="headerlink" href="#oauth2app.models.AccessToken.client" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="oauth2app.models.AccessToken.macnonce_set">
+<tt class="descclassname">AccessToken.</tt><tt class="descname">macnonce_set</tt><a class="headerlink" href="#oauth2app.models.AccessToken.macnonce_set" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -183,9 +171,6 @@ random string</em></li>
 random string</em></li>
 <li><em>redirect_uri:</em> A string representing the client redirect_uri. 
 <em>Default None</em></li>
-<li><em>authorized_reponse_types:</em> An integer representing the bit represented 
-authorized response types. Example: oauth2app.lib.response.TOKEN | 
-oauth2app.lib.response.CODE. <em>Default oauth2app.lib.response.CODE</em></li>
 </ul>
 <dl class="exception">
 <dt id="oauth2app.models.Client.DoesNotExist">
@@ -272,6 +257,32 @@ requesting client when the code was issued. <em>Default None</em></li>
 </dd></dl>
 
 <dl class="class">
+<dt id="oauth2app.models.MACNonce">
+<em class="property">class </em><tt class="descclassname">oauth2app.models.</tt><tt class="descname">MACNonce</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/oauth2app/models.html#MACNonce"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.models.MACNonce" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stores Nonce strings for use with MAC Authentication.</p>
+<p><strong>Args:</strong></p>
+<ul class="simple">
+<li><em>access_token:</em> A oauth2app.models.AccessToken object</li>
+<li><em>nonce:</em> A unique nonce string.</li>
+</ul>
+<dl class="exception">
+<dt id="oauth2app.models.MACNonce.DoesNotExist">
+<em class="property">exception </em><tt class="descname">DoesNotExist</tt><a class="headerlink" href="#oauth2app.models.MACNonce.DoesNotExist" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="exception">
+<dt id="oauth2app.models.MACNonce.MultipleObjectsReturned">
+<em class="property">exception </em><tt class="descclassname">MACNonce.</tt><tt class="descname">MultipleObjectsReturned</tt><a class="headerlink" href="#oauth2app.models.MACNonce.MultipleObjectsReturned" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="oauth2app.models.MACNonce.access_token">
+<tt class="descclassname">MACNonce.</tt><tt class="descname">access_token</tt><a class="headerlink" href="#oauth2app.models.MACNonce.access_token" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
 <dt id="oauth2app.models.TimestampGenerator">
 <em class="property">class </em><tt class="descclassname">oauth2app.models.</tt><tt class="descname">TimestampGenerator</tt><big>(</big><em>seconds=0</em><big>)</big><a class="reference internal" href="_modules/oauth2app/models.html#TimestampGenerator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#oauth2app.models.TimestampGenerator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Callable Timestamp Generator that returns a UNIX time integer.</p>
@@ -306,30 +317,49 @@ timestamp should be. <em>Default 0</em></li>
   <h4>Next topic</h4>
   <p class="topless"><a href="settings.html"
                         title="next chapter">Settings</a></p>
-			<div id="searchbox" style="display: none">
-			  <h3>Quick search</h3>
-			    <form class="search" action="search.html" method="get">
-			      <input type="text" name="q" size="18" />
-			      <input type="image" class="image" src="_static/search.gif" />
-			      <input type="hidden" name="check_keywords" value="yes" />
-			      <input type="hidden" name="area" value="default" />
-			    </form>
-			    <p class="searchtip">
-			    Enter search terms or a module, class or function name.
-			    </p>
-			</div>
-		
-			<script type="text/javascript">$('#searchbox').show(0);</script>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/models.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-<div class="hd_bottom"></div>
-</div>
-
-	
-	<div id="footer">
-        <p>&copy; 2008-2011 HiiDef</p>
-    </div><!-- /footer -->
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="settings.html" title="Settings"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="token.html" title="Access Token Generation"
+             >previous</a> |</li>
+        <li><a href="index.html">Django OAuth 2.0 Server App v0.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, John Wehr.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+    </div>
   </body>
 </html>

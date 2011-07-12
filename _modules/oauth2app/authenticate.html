@@ -1,17 +1,15 @@
 
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
     <title>oauth2app.authenticate &mdash; Django OAuth 2.0 Server App v0.1.0 documentation</title>
-    
     <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
@@ -28,37 +26,20 @@
     <link rel="up" title="Module code" href="../index.html" /> 
   </head>
   <body>
-	<div id="header">
-	     <h1 class="hd"><a href="http://hiidef.com/" onclick="return false" title="HiiDef Inc."><span class="hd_hidden">HiiDef Inc.</span></a></h1>
-	     <ul class="hd_topnav">
-			<li><a href="http://hiidef.com/products" title="Products">Products</a></li>
-	         <li><a href="http://hiidef.com/team" title="Team">Team</a></li>
-	         <li><a href="http://blog.hiidef.com" title="Blog">Blog</a></li>
-	         <li><a href="http://hiidef.com/jobs" title="Jobs">Jobs</a></li>
-			 <li><a href="http://hiidef.github.com/" title="Code">Code</a></li>
-	         <li class="contact"><a href="mailto:hello@hiidef.com">hello@hiidef.com</a></li>
-	     </ul>
-	     <div id="hero">
-	         <h2 class="hd">oauth2app.authenticate</h2>
-	     </div>
-    <div class="hd_related">
-      <ul class="right">
-        <li style="margin-right: 10px">
-          &nbsp;<a href="../../genindex.html" title="General Index"
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
              accesskey="I">index</a></li>
-        <li >
-          &nbsp;<a href="../../py-modindex.html" title="Python Module Index"
-             >modules</a>&nbsp; |&nbsp;</li>
-	  </ul>
-	  <ul>
-        <li>&nbsp;<a href="../../index.html">Django OAuth 2.0 Server App v0.1.0 documentation</a>&nbsp; &raquo;&nbsp;</li>
-          <li>&nbsp;<a href="../index.html" accesskey="U">Module code</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Django OAuth 2.0 Server App v0.1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
-    </div>
-	 </div>
-	
-<div id="main">
-<div class="hd_top"></div>  
+    </div>  
+
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
@@ -68,12 +49,17 @@
 <span class="c">#-*- coding: utf-8 -*-</span>
 
 
-<span class="kn">from</span> <span class="nn">django.http</span> <span class="kn">import</span> <span class="n">HttpResponse</span><span class="p">,</span> <span class="n">HttpResponseBadRequest</span>
-<span class="kn">from</span> <span class="nn">urlparse</span> <span class="kn">import</span> <span class="n">parse_qsl</span>
-<span class="kn">from</span> <span class="nn">.exceptions</span> <span class="kn">import</span> <span class="n">OAuth2Exception</span>
-<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">AccessToken</span><span class="p">,</span> <span class="n">AccessRange</span>
-<span class="kn">from</span> <span class="nn">simplejson</span> <span class="kn">import</span> <span class="n">dumps</span>
+<span class="sd">&quot;&quot;&quot;OAuth 2.0 Authentication&quot;&quot;&quot;</span>
 
+
+<span class="kn">from</span> <span class="nn">hashlib</span> <span class="kn">import</span> <span class="n">sha256</span>
+<span class="kn">from</span> <span class="nn">urlparse</span> <span class="kn">import</span> <span class="n">parse_qsl</span>
+<span class="kn">from</span> <span class="nn">simplejson</span> <span class="kn">import</span> <span class="n">dumps</span>
+<span class="kn">from</span> <span class="nn">django.conf</span> <span class="kn">import</span> <span class="n">settings</span>
+<span class="kn">from</span> <span class="nn">django.http</span> <span class="kn">import</span> <span class="n">HttpResponse</span>
+<span class="kn">from</span> <span class="nn">.exceptions</span> <span class="kn">import</span> <span class="n">OAuth2Exception</span>
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">AccessToken</span><span class="p">,</span> <span class="n">AccessRange</span><span class="p">,</span> <span class="n">TimestampGenerator</span>
+<span class="kn">from</span> <span class="nn">.consts</span> <span class="kn">import</span> <span class="n">REALM</span><span class="p">,</span> <span class="n">AUTHENTICATION_METHOD</span><span class="p">,</span> <span class="n">MAC</span><span class="p">,</span> <span class="n">BEARER</span>
 
 <div class="viewcode-block" id="AuthenticationException"><a class="viewcode-back" href="../../authenticate.html#oauth2app.authenticate.AuthenticationException">[docs]</a><span class="k">class</span> <span class="nc">AuthenticationException</span><span class="p">(</span><span class="n">OAuth2Exception</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Authentication exception base class.&quot;&quot;&quot;</span>
@@ -98,56 +84,79 @@
     <span class="sd">&quot;&quot;&quot;The request requires higher privileges than provided by the</span>
 <span class="sd">    access token.&quot;&quot;&quot;</span>
     <span class="n">error</span> <span class="o">=</span> <span class="s">&#39;insufficient_scope&#39;</span>
-    </div>
+</div>
+<div class="viewcode-block" id="UnvalidatedRequest"><a class="viewcode-back" href="../../authenticate.html#oauth2app.authenticate.UnvalidatedRequest">[docs]</a><span class="k">class</span> <span class="nc">UnvalidatedRequest</span><span class="p">(</span><span class="n">OAuth2Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The method requested requires a validated request to continue.&quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+</div>
 <div class="viewcode-block" id="Authenticator"><a class="viewcode-back" href="../../authenticate.html#oauth2app.authenticate.Authenticator">[docs]</a><span class="k">class</span> <span class="nc">Authenticator</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Django HttpRequest authenticator. Checks a request for valid</span>
 <span class="sd">    credentials and scope.</span>
-<span class="sd">    </span>
-<span class="sd">    **Args:**</span>
-<span class="sd">    </span>
-<span class="sd">    * *request:* Django HttpRequest object.</span>
-<span class="sd">    </span>
+
 <span class="sd">    **Kwargs:**</span>
-<span class="sd">    </span>
-<span class="sd">    * *scopes:* A iterable of oauth2app.models.AccessRange objects.</span>
+
+<span class="sd">    * *scope:* An iterable of oauth2app.models.AccessRange objects representing</span>
+<span class="sd">      the scope the authenticator will authenticate.</span>
+<span class="sd">      *Default None*</span>
+<span class="sd">    * *authentication_method:* Accepted authentication methods. Possible</span>
+<span class="sd">      values are: oauth2app.consts.MAC, oauth2app.consts.BEARER, </span>
+<span class="sd">      oauth2app.consts.MAC | oauth2app.consts.BEARER, </span>
+<span class="sd">      *Default oauth2app.consts.BEARER*</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
-    
+
     <span class="n">valid</span> <span class="o">=</span> <span class="bp">False</span>
     <span class="n">access_token</span> <span class="o">=</span> <span class="bp">None</span>
     <span class="n">auth_type</span> <span class="o">=</span> <span class="bp">None</span>
     <span class="n">auth_value</span> <span class="o">=</span> <span class="bp">None</span>
     <span class="n">error</span> <span class="o">=</span> <span class="bp">None</span>
-    
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">scope</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="n">attempted_validation</span> <span class="o">=</span> <span class="bp">False</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> 
+            <span class="n">scope</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> 
+            <span class="n">authentication_method</span><span class="o">=</span><span class="n">AUTHENTICATION_METHOD</span><span class="p">):</span>         
+        <span class="k">if</span> <span class="n">authentication_method</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="n">BEARER</span><span class="p">,</span> <span class="n">MAC</span><span class="p">,</span> <span class="n">BEARER</span> <span class="o">|</span> <span class="n">MAC</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">OAuth2Exception</span><span class="p">(</span><span class="s">&quot;Possible values for authentication_method&quot;</span> 
+                <span class="s">&quot; are oauth2app.consts.MAC, oauth2app.consts.BEARER, &quot;</span>
+                <span class="s">&quot;oauth2app.consts.MAC | oauth2app.consts.BEARER&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">authentication_method</span> <span class="o">=</span> <span class="n">authentication_method</span>
         <span class="k">if</span> <span class="n">scope</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">authorized_scope</span> <span class="o">=</span> <span class="bp">None</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">scope</span><span class="p">,</span> <span class="n">AccessRange</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">authorized_scope</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">scope</span><span class="o">.</span><span class="n">key</span><span class="p">])</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">authorized_scope</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">x</span><span class="o">.</span><span class="n">key</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">scope</span><span class="p">])</span>
+
+<div class="viewcode-block" id="Authenticator.validate"><a class="viewcode-back" href="../../authenticate.html#oauth2app.authenticate.Authenticator.validate">[docs]</a>    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Validate the request. Raises an AuthenticationException if the</span>
+<span class="sd">        request fails authentication.</span>
+
+<span class="sd">        **Args:**</span>
+
+<span class="sd">        * *request:* Django HttpRequest object.</span>
+
+<span class="sd">        *Returns None*&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">request</span> <span class="o">=</span> <span class="n">request</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bearer_token</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">REQUEST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;bearer_token&#39;</span><span class="p">)</span>
         <span class="k">if</span> <span class="s">&quot;HTTP_AUTHORIZATION&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">META</span><span class="p">:</span>
             <span class="n">auth</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">META</span><span class="p">[</span><span class="s">&quot;HTTP_AUTHORIZATION&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">auth_type</span> <span class="o">=</span> <span class="n">auth</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">auth_value</span> <span class="o">=</span> <span class="s">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">auth</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">callback</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">REQUEST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;callback&#39;</span><span class="p">)</span>
-    
-<div class="viewcode-block" id="Authenticator.validate"><a class="viewcode-back" href="../../authenticate.html#oauth2app.authenticate.Authenticator.validate">[docs]</a>    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Validate the request. Raises an AuthenticationException if the </span>
-<span class="sd">        request fails authentication.</span>
-<span class="sd">        </span>
-<span class="sd">        *Returns None*&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">request_hostname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">META</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;REMOTE_HOST&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">request_port</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">META</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;SERVER_PORT&quot;</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_validate</span><span class="p">()</span>
         <span class="k">except</span> <span class="n">AuthenticationException</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">error</span> <span class="o">=</span> <span class="n">e</span>
             <span class="k">raise</span> <span class="n">e</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">valid</span> <span class="o">=</span> <span class="bp">True</span>
-        </div>
+</div>
     <span class="k">def</span> <span class="nf">_validate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Validate the request.&quot;&quot;&quot;</span>
         <span class="c"># Check for Bearer or Mac authorization</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">auth_type</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">auth_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&quot;bearer&quot;</span><span class="p">,</span> <span class="s">&quot;mac&quot;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">attempted_validation</span> <span class="o">=</span> <span class="bp">True</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">auth_type</span> <span class="o">==</span> <span class="s">&quot;bearer&quot;</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_validate_bearer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auth_value</span><span class="p">)</span>
             <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">auth_type</span> <span class="o">==</span> <span class="s">&quot;mac&quot;</span><span class="p">:</span>
@@ -155,94 +164,214 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">valid</span> <span class="o">=</span> <span class="bp">True</span>
         <span class="c"># Check for posted/paramaterized bearer token.</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">bearer_token</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">attempted_validation</span> <span class="o">=</span> <span class="bp">True</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_validate_bearer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bearer_token</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">valid</span> <span class="o">=</span> <span class="bp">True</span>
             <span class="k">return</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">InvalidRequest</span><span class="p">(</span><span class="s">&quot;&quot;&quot;Request authentication failed, no</span>
-<span class="s">                authentication credentials provided.&quot;&quot;&quot;</span><span class="p">)</span>    
+            <span class="k">raise</span> <span class="n">InvalidRequest</span><span class="p">(</span><span class="s">&quot;Request authentication failed, no &quot;</span>
+                <span class="s">&quot;authentication credentials provided.&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">authorized_scope</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
             <span class="n">token_scope</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">x</span><span class="o">.</span><span class="n">key</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">access_token</span><span class="o">.</span><span class="n">scope</span><span class="o">.</span><span class="n">all</span><span class="p">()])</span>
             <span class="n">new_scope</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">authorized_scope</span> <span class="o">-</span> <span class="n">token_scope</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_scope</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">InsufficientScope</span><span class="p">(</span><span class="s">&quot;&quot;&quot;Access token has insufficient </span>
-<span class="s">                    scope: </span><span class="si">%s</span><span class="s">&quot;&quot;&quot;</span> <span class="o">%</span> <span class="nb">list</span><span class="p">(</span><span class="n">new_scope</span><span class="p">))</span>
-            
+                <span class="k">raise</span> <span class="n">InsufficientScope</span><span class="p">((</span><span class="s">&quot;Access token has insufficient &quot;</span>
+                    <span class="s">&quot;scope: </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">)</span> <span class="o">%</span> <span class="s">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">authorized_scope</span><span class="p">))</span>
+        <span class="n">now</span> <span class="o">=</span> <span class="n">TimestampGenerator</span><span class="p">()()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">access_token</span><span class="o">.</span><span class="n">expire</span> <span class="o">&lt;</span> <span class="n">now</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidToken</span><span class="p">(</span><span class="s">&quot;Token is expired&quot;</span><span class="p">)</span>
+
     <span class="k">def</span> <span class="nf">_validate_bearer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">token</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Validate Bearer token.&quot;&quot;&quot;</span>
-        <span class="k">try</span><span class="p">:</span> 
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">authentication_method</span> <span class="o">&amp;</span> <span class="n">BEARER</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidToken</span><span class="p">(</span><span class="s">&quot;Bearer authentication is not supported.&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">access_token</span> <span class="o">=</span> <span class="n">AccessToken</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">token</span><span class="o">=</span><span class="n">token</span><span class="p">)</span>
         <span class="k">except</span> <span class="n">AccessToken</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">InvalidToken</span><span class="p">(</span><span class="s">&quot;Token doesn&#39;t exist&quot;</span><span class="p">)</span>
-    
-    <span class="k">def</span> <span class="nf">_validate_mac</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">auth</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">_validate_mac</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mac_header</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Validate MAC authentication. Not implemented.&quot;&quot;&quot;</span>
-        <span class="n">auth</span> <span class="o">=</span> <span class="n">parse_qsl</span><span class="p">(</span><span class="n">auth</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot;,&quot;</span><span class="p">,</span><span class="s">&quot;&amp;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;&quot;&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">))</span>
-        <span class="n">auth</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">([(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">auth</span><span class="p">])</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">authentication_method</span> <span class="o">&amp;</span> <span class="n">MAC</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidToken</span><span class="p">(</span><span class="s">&quot;MAC authentication is not supported.&quot;</span><span class="p">)</span>
+        <span class="n">mac_header</span> <span class="o">=</span> <span class="n">parse_qsl</span><span class="p">(</span><span class="n">mac_header</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot;,&quot;</span><span class="p">,</span><span class="s">&quot;&amp;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;&quot;&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">))</span>
+        <span class="n">mac_header</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">([(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">mac_header</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">parameter</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&quot;id&quot;</span><span class="p">,</span> <span class="s">&quot;nonce&quot;</span><span class="p">,</span> <span class="s">&quot;mac&quot;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="s">&quot;parameter&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">mac_header</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">InvalidToken</span><span class="p">(</span><span class="s">&quot;MAC Authorization header does not contain&quot;</span>
+                    <span class="s">&quot; required parameter &#39;</span><span class="si">%s</span><span class="s">&#39;&quot;</span> <span class="o">%</span> <span class="n">parameter</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s">&quot;bodyhash&quot;</span> <span class="ow">in</span> <span class="n">mac_header</span><span class="p">:</span>
+            <span class="n">bodyhash</span> <span class="o">=</span> <span class="n">mac_header</span><span class="p">[</span><span class="s">&quot;bodyhash&quot;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">bodyhash</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="k">if</span> <span class="s">&quot;ext&quot;</span> <span class="ow">in</span> <span class="n">mac_header</span><span class="p">:</span>
+            <span class="n">ext</span> <span class="o">=</span> <span class="n">mac_header</span><span class="p">[</span><span class="s">&quot;ext&quot;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ext</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">request_hostname</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidRequest</span><span class="p">(</span><span class="s">&quot;Request does not contain a hostname.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">request_port</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidRequest</span><span class="p">(</span><span class="s">&quot;Request does not contain a port.&quot;</span><span class="p">)</span>
+        <span class="n">nonce_timestamp</span><span class="p">,</span> <span class="n">nonce_string</span> <span class="o">=</span> <span class="n">mac_header</span><span class="p">[</span><span class="s">&quot;nonce&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;:&quot;</span><span class="p">)</span>
+        <span class="n">mac</span> <span class="o">=</span> <span class="n">sha256</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span>
+            <span class="n">mac_header</span><span class="p">[</span><span class="s">&quot;nonce&quot;</span><span class="p">],</span> <span class="c"># The nonce value generated for the request</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">method</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span> <span class="c"># The HTTP request method </span>
+            <span class="s">&quot;XXX&quot;</span><span class="p">,</span> <span class="c"># The HTTP request-URI</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">request_hostname</span><span class="p">,</span> <span class="c"># The hostname included in the HTTP request</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">request_port</span><span class="p">,</span> <span class="c"># The port as included in the HTTP request</span>
+            <span class="n">bodyhash</span><span class="p">,</span>
+            <span class="n">ext</span><span class="p">]))</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+        <span class="c"># Todo:</span>
+        <span class="c"># 1.  Recalculate the request body hash (if included in the request) as</span>
+        <span class="c"># described in Section 3.2 and request MAC as described in</span>
+        <span class="c"># Section 3.3 and compare the request MAC to the value received</span>
+        <span class="c"># from the client via the &quot;mac&quot; attribute.</span>
+        <span class="c"># 2.  Ensure that the combination of nonce and MAC key identifier</span>
+        <span class="c"># received from the client has not been used before in a previous</span>
+        <span class="c"># request (the server MAY reject requests with stale timestamps;</span>
+        <span class="c"># the determination of staleness is left up to the server to</span>
+        <span class="c"># define).</span>
+        <span class="c"># 3.  Verify the scope and validity of the MAC credentials.</span>
         
+
     <span class="k">def</span> <span class="nf">_get_user</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;The user associated with the valid access token. </span>
-<span class="sd">        </span>
+        <span class="sd">&quot;&quot;&quot;The user associated with the valid access token.</span>
+
 <span class="sd">        *django.auth.User object*&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">validate</span><span class="p">()</span>
+            <span class="k">raise</span> <span class="n">UnvalidatedRequest</span><span class="p">(</span><span class="s">&quot;This request is invalid or has not &quot;</span>
+                <span class="s">&quot;been validated.&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">access_token</span><span class="o">.</span><span class="n">user</span>
-        
+
     <span class="n">user</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_get_user</span><span class="p">)</span>
-    
+
     <span class="k">def</span> <span class="nf">_get_scope</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;The client scope associated with the valid access token.</span>
-<span class="sd">        </span>
+
 <span class="sd">        *QuerySet of AccessRange objects.*&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">validate</span><span class="p">()</span>
+            <span class="k">raise</span> <span class="n">UnvalidatedRequest</span><span class="p">(</span><span class="s">&quot;This request is invalid or has not &quot;</span>
+                <span class="s">&quot;been validated.&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">access_token</span><span class="o">.</span><span class="n">scope</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
-    
+
     <span class="n">scope</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_get_scope</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_get_client</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;The client associated with the valid access token. </span>
-<span class="sd">       </span>
+        <span class="sd">&quot;&quot;&quot;The client associated with the valid access token.</span>
+
 <span class="sd">        *oauth2app.models.Client object*&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">validate</span><span class="p">()</span>
+            <span class="k">raise</span> <span class="n">UnvalidatedRequest</span><span class="p">(</span><span class="s">&quot;This request is invalid or has not &quot;</span>
+                <span class="s">&quot;been validated.&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">access_token</span><span class="o">.</span><span class="n">client</span>
-    
+
     <span class="n">client</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_get_client</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Authenticator.grant_response"><a class="viewcode-back" href="../../authenticate.html#oauth2app.authenticate.Authenticator.grant_response">[docs]</a>    <span class="k">def</span> <span class="nf">grant_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="n">json_data</span> <span class="o">=</span> <span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">callback</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="n">json_data</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">(</span><span class="si">%s</span><span class="s">);&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">callback</span><span class="p">,</span> <span class="n">json_data</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span>    
-            <span class="n">content</span><span class="o">=</span><span class="n">json_data</span><span class="p">,</span> 
-            <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;application/json&#39;</span><span class="p">)</span>
-    </div>
-<div class="viewcode-block" id="Authenticator.error_response"><a class="viewcode-back" href="../../authenticate.html#oauth2app.authenticate.Authenticator.error_response">[docs]</a>    <span class="k">def</span> <span class="nf">error_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;In the event of an error, return a Django HttpResponseBadRequest</span>
-<span class="sd">        with the appropriate JSON encoded error parameters.</span>
+<div class="viewcode-block" id="Authenticator.error_response"><a class="viewcode-back" href="../../authenticate.html#oauth2app.authenticate.Authenticator.error_response">[docs]</a>    <span class="k">def</span> <span class="nf">error_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+            <span class="n">content</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span>
+            <span class="n">mimetype</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+            <span class="n">content_type</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">DEFAULT_CONTENT_TYPE</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Error response generator. Returns a Django HttpResponse with status</span>
+<span class="sd">        401 and the approproate headers set. See Django documentation for details.</span>
+<span class="sd">        https://docs.djangoproject.com/en/dev/ref/request-response/#django.http.HttpResponse.__init__</span>
 
-<span class="sd">        *Returns HttpResponseBadRequest*&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">error</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="n">e</span> <span class="o">=</span> <span class="n">error</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">error</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="n">e</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">error</span>
+<span class="sd">        **Kwargs:**</span>
+
+<span class="sd">        * *content:* See Django docs. *Default &#39;&#39;*</span>
+<span class="sd">        * *mimetype:* See Django docs. *Default None*</span>
+<span class="sd">        * *content_type:* See Django docs. *Default DEFAULT_CONTENT_TYPE*</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">HttpResponse</span><span class="p">(</span>
+            <span class="n">content</span><span class="o">=</span><span class="n">content</span><span class="p">,</span>
+            <span class="n">mimetype</span><span class="o">=</span><span class="n">mimetype</span><span class="p">,</span>
+            <span class="n">content_type</span><span class="o">=</span><span class="n">content_type</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">attempted_validation</span><span class="p">:</span>
+            <span class="n">response</span><span class="p">[</span><span class="s">&#39;WWW-Authenticate&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;Bearer realm=&quot;</span><span class="si">%s</span><span class="s">&quot;&#39;</span> <span class="o">%</span> <span class="n">REALM</span>
+            <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">=</span> <span class="mi">401</span>
+            <span class="k">return</span> <span class="n">response</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">e</span> <span class="o">=</span> <span class="n">InvalidRequest</span><span class="p">(</span><span class="s">&quot;Access Denied.&quot;</span><span class="p">)</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s">&#39;error&#39;</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="s">&quot;error&quot;</span><span class="p">,</span> <span class="s">&quot;invalid_request&quot;</span><span class="p">),</span> 
-            <span class="s">&#39;error_description&#39;</span><span class="p">:</span> <span class="s">u&#39;</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">e</span><span class="o">.</span><span class="n">message</span><span class="p">}</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">error</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">error</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="p">,</span> <span class="s">&quot;error&quot;</span><span class="p">,</span> <span class="s">&quot;invalid_request&quot;</span><span class="p">)</span>
+                <span class="n">error_description</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="o">.</span><span class="n">message</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">error</span> <span class="o">=</span> <span class="s">&quot;invalid_request&quot;</span>
+                <span class="n">error_description</span> <span class="o">=</span> <span class="s">&quot;Invalid Request.&quot;</span>
+            <span class="n">header</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="s">&#39;Bearer realm=&quot;</span><span class="si">%s</span><span class="s">&quot;&#39;</span> <span class="o">%</span> <span class="n">REALM</span><span class="p">,</span>
+                <span class="s">&#39;error=&quot;</span><span class="si">%s</span><span class="s">&quot;&#39;</span> <span class="o">%</span> <span class="n">error</span><span class="p">,</span>
+                <span class="s">&#39;error_description=&quot;</span><span class="si">%s</span><span class="s">&quot;&#39;</span> <span class="o">%</span> <span class="n">error_description</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="p">,</span> <span class="n">InsufficientScope</span><span class="p">):</span>
+                <span class="n">header</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;scope=</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">authorized_scope</span><span class="p">))</span>
+                <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">=</span> <span class="mi">403</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="p">,</span> <span class="n">InvalidToken</span><span class="p">):</span>
+                <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">=</span> <span class="mi">401</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="p">,</span> <span class="n">InvalidRequest</span><span class="p">):</span>
+                <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">=</span> <span class="mi">400</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">=</span> <span class="mi">401</span>
+            <span class="n">response</span><span class="p">[</span><span class="s">&#39;WWW-Authenticate&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">header</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">response</span>
+
+</div></div>
+<div class="viewcode-block" id="JSONAuthenticator"><a class="viewcode-back" href="../../authenticate.html#oauth2app.authenticate.JSONAuthenticator">[docs]</a><span class="k">class</span> <span class="nc">JSONAuthenticator</span><span class="p">(</span><span class="n">Authenticator</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Wraps Authenticator, adds support for a callback parameter and</span>
+<span class="sd">    JSON related. convenience methods.</span>
+
+<span class="sd">    **Args:**</span>
+
+<span class="sd">    * *request:* Django HttpRequest object.</span>
+
+<span class="sd">    **Kwargs:**</span>
+
+<span class="sd">    * *scope:* A iterable of oauth2app.models.AccessRange objects.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">callback</span> <span class="o">=</span> <span class="bp">None</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scope</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="n">Authenticator</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scope</span><span class="o">=</span><span class="n">scope</span><span class="p">)</span>
+        
+<div class="viewcode-block" id="JSONAuthenticator.validate"><a class="viewcode-back" href="../../authenticate.html#oauth2app.authenticate.JSONAuthenticator.validate">[docs]</a>    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callback</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">REQUEST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;callback&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Authenticator</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="JSONAuthenticator.response"><a class="viewcode-back" href="../../authenticate.html#oauth2app.authenticate.JSONAuthenticator.response">[docs]</a>    <span class="k">def</span> <span class="nf">response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a HttpResponse object of JSON serialized data.</span>
+
+<span class="sd">        **Args:**</span>
+
+<span class="sd">        * *data:* Object to be JSON serialized and returned.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">json_data</span> <span class="o">=</span> <span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">callback</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
             <span class="n">json_data</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">(</span><span class="si">%s</span><span class="s">);&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">callback</span><span class="p">,</span> <span class="n">json_data</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span>    
-                <span class="n">content</span><span class="o">=</span><span class="n">json_data</span><span class="p">,</span> 
-                <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;application/json&#39;</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">HttpResponse</span><span class="p">(</span>
+            <span class="n">content</span><span class="o">=</span><span class="n">json_data</span><span class="p">,</span>
+            <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;application/json&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">response</span>
+</div>
+<div class="viewcode-block" id="JSONAuthenticator.error_response"><a class="viewcode-back" href="../../authenticate.html#oauth2app.authenticate.JSONAuthenticator.error_response">[docs]</a>    <span class="k">def</span> <span class="nf">error_response</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a HttpResponse object of JSON error data.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">error</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="n">dumps</span><span class="p">({</span>
+                <span class="s">&quot;error&quot;</span><span class="p">:</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="p">,</span> <span class="s">&quot;error&quot;</span><span class="p">,</span> <span class="s">&quot;invalid_request&quot;</span><span class="p">),</span>
+                <span class="s">&quot;error_description&quot;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="o">.</span><span class="n">message</span><span class="p">})</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">HttpResponseBadRequest</span><span class="p">(</span>    
-                <span class="n">content</span><span class="o">=</span><span class="n">json_data</span><span class="p">,</span> 
-                <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;application/json&#39;</span><span class="p">)</span></div></div>
+            <span class="n">content</span> <span class="o">=</span> <span class="p">({</span>
+                <span class="s">&quot;error&quot;</span><span class="p">:</span><span class="s">&quot;invalid_request&quot;</span><span class="p">,</span>
+                <span class="s">&quot;error_description&quot;</span><span class="p">:</span><span class="s">&quot;Invalid Request.&quot;</span><span class="p">})</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">callback</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">(</span><span class="si">%s</span><span class="s">);&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">callback</span><span class="p">,</span> <span class="n">content</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">Authenticator</span><span class="o">.</span><span class="n">error_response</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">content</span><span class="o">=</span><span class="n">content</span><span class="p">,</span>
+            <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;application/json&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">callback</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">=</span> <span class="mi">200</span>
+        <span class="k">return</span> <span class="n">response</span></div></div>
 </pre></div>
 
           </div>
@@ -250,30 +379,39 @@
       </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
-			<div id="searchbox" style="display: none">
-			  <h3>Quick search</h3>
-			    <form class="search" action="../../search.html" method="get">
-			      <input type="text" name="q" size="18" />
-			      <input type="image" class="image" src="../../_static/search.gif" />
-			      <input type="hidden" name="check_keywords" value="yes" />
-			      <input type="hidden" name="area" value="default" />
-			    </form>
-			    <p class="searchtip">
-			    Enter search terms or a module, class or function name.
-			    </p>
-			</div>
-		
-			<script type="text/javascript">$('#searchbox').show(0);</script>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-<div class="hd_bottom"></div>
-</div>
-
-	
-	<div id="footer">
-        <p>&copy; 2008-2011 HiiDef</p>
-    </div><!-- /footer -->
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Django OAuth 2.0 Server App v0.1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, John Wehr.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+    </div>
   </body>
 </html>

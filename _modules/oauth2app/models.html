@@ -1,17 +1,15 @@
 
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
     <title>oauth2app.models &mdash; Django OAuth 2.0 Server App v0.1.0 documentation</title>
-    
     <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
@@ -28,37 +26,20 @@
     <link rel="up" title="Module code" href="../index.html" /> 
   </head>
   <body>
-	<div id="header">
-	     <h1 class="hd"><a href="http://hiidef.com/" onclick="return false" title="HiiDef Inc."><span class="hd_hidden">HiiDef Inc.</span></a></h1>
-	     <ul class="hd_topnav">
-			<li><a href="http://hiidef.com/products" title="Products">Products</a></li>
-	         <li><a href="http://hiidef.com/team" title="Team">Team</a></li>
-	         <li><a href="http://blog.hiidef.com" title="Blog">Blog</a></li>
-	         <li><a href="http://hiidef.com/jobs" title="Jobs">Jobs</a></li>
-			 <li><a href="http://hiidef.github.com/" title="Code">Code</a></li>
-	         <li class="contact"><a href="mailto:hello@hiidef.com">hello@hiidef.com</a></li>
-	     </ul>
-	     <div id="hero">
-	         <h2 class="hd">oauth2app.models</h2>
-	     </div>
-    <div class="hd_related">
-      <ul class="right">
-        <li style="margin-right: 10px">
-          &nbsp;<a href="../../genindex.html" title="General Index"
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
              accesskey="I">index</a></li>
-        <li >
-          &nbsp;<a href="../../py-modindex.html" title="Python Module Index"
-             >modules</a>&nbsp; |&nbsp;</li>
-	  </ul>
-	  <ul>
-        <li>&nbsp;<a href="../../index.html">Django OAuth 2.0 Server App v0.1.0 documentation</a>&nbsp; &raquo;&nbsp;</li>
-          <li>&nbsp;<a href="../index.html" accesskey="U">Module code</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Django OAuth 2.0 Server App v0.1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
-    </div>
-	 </div>
-	
-<div id="main">
-<div class="hd_top"></div>  
+    </div>  
+
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
@@ -68,13 +49,18 @@
 <span class="c">#-*- coding: utf-8 -*-</span>
 
 
+<span class="sd">&quot;&quot;&quot;OAuth 2.0 Django Models&quot;&quot;&quot;</span>
+
+
 <span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">from</span> <span class="nn">hashlib</span> <span class="kn">import</span> <span class="n">sha512</span>
 <span class="kn">from</span> <span class="nn">uuid</span> <span class="kn">import</span> <span class="n">uuid4</span>
 <span class="kn">from</span> <span class="nn">django.db</span> <span class="kn">import</span> <span class="n">models</span>
 <span class="kn">from</span> <span class="nn">django.contrib.auth.models</span> <span class="kn">import</span> <span class="n">User</span>
-<span class="kn">from</span> <span class="nn">.consts</span> <span class="kn">import</span> <span class="o">*</span>
-<span class="kn">from</span> <span class="nn">.lib.response</span> <span class="kn">import</span> <span class="n">RESPONSE_CHOICES</span><span class="p">,</span> <span class="n">CODE</span>
+<span class="kn">from</span> <span class="nn">.consts</span> <span class="kn">import</span> <span class="n">CLIENT_KEY_LENGTH</span><span class="p">,</span> <span class="n">CLIENT_SECRET_LENGTH</span>
+<span class="kn">from</span> <span class="nn">.consts</span> <span class="kn">import</span> <span class="n">ACCESS_TOKEN_LENGTH</span><span class="p">,</span> <span class="n">REFRESH_TOKEN_LENGTH</span>
+<span class="kn">from</span> <span class="nn">.consts</span> <span class="kn">import</span> <span class="n">ACCESS_TOKEN_EXPIRATION</span><span class="p">,</span> <span class="n">MAC_KEY_LENGTH</span><span class="p">,</span> <span class="n">REFRESHABLE</span>
+<span class="kn">from</span> <span class="nn">.consts</span> <span class="kn">import</span> <span class="n">CODE_KEY_LENGTH</span><span class="p">,</span> <span class="n">CODE_EXPIRATION</span>
 
 
 <div class="viewcode-block" id="TimestampGenerator"><a class="viewcode-back" href="../../models.html#oauth2app.models.TimestampGenerator">[docs]</a><span class="k">class</span> <span class="nc">TimestampGenerator</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -129,9 +115,6 @@
 <span class="sd">      random string*</span>
 <span class="sd">    * *redirect_uri:* A string representing the client redirect_uri. </span>
 <span class="sd">      *Default None*</span>
-<span class="sd">    * *authorized_reponse_types:* An integer representing the bit represented </span>
-<span class="sd">      authorized response types. Example: oauth2app.lib.response.TOKEN | </span>
-<span class="sd">      oauth2app.lib.response.CODE. *Default oauth2app.lib.response.CODE*</span>
 <span class="sd">      </span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">name</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">256</span><span class="p">)</span>
@@ -147,8 +130,6 @@
         <span class="n">max_length</span><span class="o">=</span><span class="n">CLIENT_SECRET_LENGTH</span><span class="p">,</span> 
         <span class="n">default</span><span class="o">=</span><span class="n">KeyGenerator</span><span class="p">(</span><span class="n">CLIENT_SECRET_LENGTH</span><span class="p">))</span>
     <span class="n">redirect_uri</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">URLField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-    <span class="n">authorized_reponse_types</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">PositiveIntegerField</span><span class="p">(</span>
-        <span class="n">default</span><span class="o">=</span><span class="n">CODE</span><span class="p">)</span>
 
 </div>
 <div class="viewcode-block" id="AccessRange"><a class="viewcode-back" href="../../models.html#oauth2app.models.AccessRange">[docs]</a><span class="k">class</span> <span class="nc">AccessRange</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
@@ -183,6 +164,7 @@
 <span class="sd">      character random string*</span>
 <span class="sd">    * *refresh_token:* A string representing the access key token. *Default 10 </span>
 <span class="sd">      character random string*</span>
+<span class="sd">    * *mac_key:* A string representing the MAC key. *Default None*</span>
 <span class="sd">    * *expire:* A positive integer timestamp representing the access token&#39;s </span>
 <span class="sd">      expiration time.</span>
 <span class="sd">    * *scope:* A list of oauth2app.models.AccessRange objects. *Default None* </span>
@@ -204,6 +186,12 @@
         <span class="n">max_length</span><span class="o">=</span><span class="n">REFRESH_TOKEN_LENGTH</span><span class="p">,</span> 
         <span class="n">default</span><span class="o">=</span><span class="n">KeyGenerator</span><span class="p">(</span><span class="n">REFRESH_TOKEN_LENGTH</span><span class="p">),</span>
         <span class="n">db_index</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">mac_key</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span>
+        <span class="n">unique</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> 
+        <span class="n">blank</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> 
+        <span class="n">null</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> 
+        <span class="n">max_length</span><span class="o">=</span><span class="n">MAC_KEY_LENGTH</span><span class="p">,</span> 
+        <span class="n">default</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
     <span class="n">issue</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">PositiveIntegerField</span><span class="p">(</span>
         <span class="n">editable</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> 
         <span class="n">default</span><span class="o">=</span><span class="n">TimestampGenerator</span><span class="p">())</span>
@@ -246,38 +234,58 @@
         <span class="n">default</span><span class="o">=</span><span class="n">TimestampGenerator</span><span class="p">(</span><span class="n">CODE_EXPIRATION</span><span class="p">))</span>
     <span class="n">redirect_uri</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">URLField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
     <span class="n">scope</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ManyToManyField</span><span class="p">(</span><span class="n">AccessRange</span><span class="p">)</span>
-    
-</pre></div></div>
+    </div>
+<div class="viewcode-block" id="MACNonce"><a class="viewcode-back" href="../../models.html#oauth2app.models.MACNonce">[docs]</a><span class="k">class</span> <span class="nc">MACNonce</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Stores Nonce strings for use with MAC Authentication.</span>
+
+<span class="sd">    **Args:**</span>
+<span class="sd">    </span>
+<span class="sd">    * *access_token:* A oauth2app.models.AccessToken object</span>
+<span class="sd">    * *nonce:* A unique nonce string.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">access_token</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">AccessToken</span><span class="p">)</span>
+    <span class="n">nonce</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">db_index</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span></div>
+</pre></div>
 
           </div>
         </div>
       </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
-			<div id="searchbox" style="display: none">
-			  <h3>Quick search</h3>
-			    <form class="search" action="../../search.html" method="get">
-			      <input type="text" name="q" size="18" />
-			      <input type="image" class="image" src="../../_static/search.gif" />
-			      <input type="hidden" name="check_keywords" value="yes" />
-			      <input type="hidden" name="area" value="default" />
-			    </form>
-			    <p class="searchtip">
-			    Enter search terms or a module, class or function name.
-			    </p>
-			</div>
-		
-			<script type="text/javascript">$('#searchbox').show(0);</script>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-<div class="hd_bottom"></div>
-</div>
-
-	
-	<div id="footer">
-        <p>&copy; 2008-2011 HiiDef</p>
-    </div><!-- /footer -->
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Django OAuth 2.0 Server App v0.1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, John Wehr.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+    </div>
   </body>
 </html>
