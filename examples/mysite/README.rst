@@ -1,10 +1,4 @@
-oauth2app Example Django Project
---------------------------------
-
-Installation
-------------
-
-The project uses django.db.backends.sqlite3 and requires minimal configuration. ::
+The example site uses django.db.backends.sqlite3 and requires minimal configuration. ::
     
     git clone git@github.com:hiidef/oauth2app.git oauth2app
     cd oauth2app/examples/mysite
