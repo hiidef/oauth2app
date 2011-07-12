@@ -6,12 +6,19 @@ from oauth2app.authenticate import AuthenticationException
 from oauth2app.models import AccessRange
 from django.http import HttpResponse
 
+def automatic_error_str(request):
+    authenticator = Authenticator()
+    return authenticator.error_response()
+
+def automatic_error_json(request):
+    authenticator = JSONAuthenticator()
+    return authenticator.error_response()
 
 def first_name_str(request):
     scope = AccessRange.objects.get(key="first_name")
-    authenticator = Authenticator(request, scope=scope)
+    authenticator = Authenticator(scope=scope)
     try:
-        authenticator.validate()
+        authenticator.validate(request)
     except AuthenticationException:
         return authenticator.error_response()
     return HttpResponse(authenticator.user.first_name)
@@ -19,35 +26,35 @@ def first_name_str(request):
 
 def last_name_str(request):
     scope = AccessRange.objects.get(key="last_name")
-    authenticator = Authenticator(request, scope=scope)
+    authenticator = Authenticator(scope=scope)
     try:
-        authenticator.validate()
+        authenticator.validate(request)
     except AuthenticationException:
         return authenticator.error_response()
     return HttpResponse(authenticator.user.last_name)
 
 def first_and_last_name_str(request):
     scope = AccessRange.objects.filter(key__in=["first_name", "last_name"])
-    authenticator = Authenticator(request, scope=scope)
+    authenticator = Authenticator(scope=scope)
     try:
-        authenticator.validate()
+        authenticator.validate(request)
     except AuthenticationException:
         return authenticator.error_response()
-    return HttpResponse(authenticator.user.last_name)
+    return HttpResponse(authenticator.user.first_name +  " " + authenticator.user.last_name)
 
 def email_str(request):
-    authenticator = Authenticator(request)
+    authenticator = Authenticator()
     try:
-        authenticator.validate()
+        authenticator.validate(request)
     except AuthenticationException:
         return authenticator.error_response()
     return HttpResponse(authenticator.user.email)
 
 
 def email_json(request):
-    authenticator = JSONAuthenticator(request)
+    authenticator = JSONAuthenticator()
     try:
-        authenticator.validate()
+        authenticator.validate(request)
     except AuthenticationException:
         return authenticator.error_response()
     return authenticator.response({"email":authenticator.user.email})

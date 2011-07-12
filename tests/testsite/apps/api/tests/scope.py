@@ -136,4 +136,41 @@ class ScopeTestCase(unittest.TestCase):
         self.assertTrue("insufficient_scope" in str(response))
 
     def test_02_dual_scope(self):
-        pass
+        user = DjangoTestClient()
+        user.login(username=USER_USERNAME, password=USER_PASSWORD)      
+        parameters = {
+            "client_id":self.client_application.key,
+            "scope":"first_name last_name",
+            "redirect_uri":REDIRECT_URI,
+            "response_type":"code"}
+        response = user.get("/oauth2/authorize_first_and_last_name?%s" % urlencode(parameters))
+        qs = parse_qs(urlparse(response['location']).query)
+        code = qs['code']
+        client = DjangoTestClient()
+        parameters = {
+            "client_id":self.client_application.key,
+            "grant_type":"authorization_code",
+            "code":code,
+            "redirect_uri":REDIRECT_URI,
+            "scope":"first_name last_name"}
+        basic_auth = b64encode("%s:%s" % (self.client_application.key, self.client_application.secret))
+        response = client.get(
+            "/oauth2/token", 
+            parameters, 
+            HTTP_AUTHORIZATION="Basic %s" % basic_auth)
+        token = loads(response.content)["access_token"]
+        # Sufficient scope.
+        response = client.get(
+            "/api/first_and_last_name_str", 
+            {}, 
+            HTTP_AUTHORIZATION="Bearer %s" % token)
+        self.assertEqual(response.status_code, 200) 
+        self.assertEqual(response.content, USER_FIRSTNAME + " " + USER_LASTNAME)
+        # Sufficient scope.
+        response = client.get(
+            "/api/first_name_str", 
+            {}, 
+            HTTP_AUTHORIZATION="Bearer %s" % token)
+        self.assertEqual(response.status_code, 200) 
+        self.assertEqual(response.content, USER_FIRSTNAME)
+        

@@ -13,7 +13,6 @@ from .exceptions import OAuth2Exception
 from .models import AccessToken, AccessRange, TimestampGenerator
 from .consts import REALM, AUTHENTICATION_METHOD, MAC, BEARER
 
-
 class AuthenticationException(OAuth2Exception):
     """Authentication exception base class."""
     pass
@@ -38,14 +37,13 @@ class InsufficientScope(AuthenticationException):
     access token."""
     error = 'insufficient_scope'
 
+class UnvalidatedRequest(OAuth2Exception):
+    """The method requested requires a validated request to continue."""
+    pass
 
 class Authenticator(object):
     """Django HttpRequest authenticator. Checks a request for valid
     credentials and scope.
-
-    **Args:**
-
-    * *request:* Django HttpRequest object.
 
     **Kwargs:**
 
@@ -68,9 +66,8 @@ class Authenticator(object):
 
     def __init__(
             self, 
-            request, 
             scope=None, 
-            authentication_method=AUTHENTICATION_METHOD):
+            authentication_method=AUTHENTICATION_METHOD):         
         if authentication_method not in [BEARER, MAC, BEARER | MAC]:
             raise OAuth2Exception("Possible values for authentication_method" 
                 " are oauth2app.consts.MAC, oauth2app.consts.BEARER, "
@@ -82,6 +79,16 @@ class Authenticator(object):
             self.authorized_scope = set([scope.key])
         else:
             self.authorized_scope = set([x.key for x in scope])
+
+    def validate(self, request):
+        """Validate the request. Raises an AuthenticationException if the
+        request fails authentication.
+
+        **Args:**
+
+        * *request:* Django HttpRequest object.
+
+        *Returns None*"""
         self.request = request
         self.bearer_token = request.REQUEST.get('bearer_token')
         if "HTTP_AUTHORIZATION" in self.request.META:
@@ -90,12 +97,6 @@ class Authenticator(object):
             self.auth_value = " ".join(auth[1:]).strip()
         self.request_hostname = self.request.META.get("REMOTE_HOST")
         self.request_port = self.request.META.get("SERVER_PORT")
-
-    def validate(self):
-        """Validate the request. Raises an AuthenticationException if the
-        request fails authentication.
-
-        *Returns None*"""
         try:
             self._validate()
         except AuthenticationException, e:
@@ -192,7 +193,8 @@ class Authenticator(object):
 
         *django.auth.User object*"""
         if not self.valid:
-            self.validate()
+            raise UnvalidatedRequest("This request is invalid or has not "
+                "been validated.")
         return self.access_token.user
 
     user = property(_get_user)
@@ -202,7 +204,8 @@ class Authenticator(object):
 
         *QuerySet of AccessRange objects.*"""
         if not self.valid:
-            self.validate()
+            raise UnvalidatedRequest("This request is invalid or has not "
+                "been validated.")
         return self.access_token.scope.all()
 
     scope = property(_get_scope)
@@ -212,7 +215,8 @@ class Authenticator(object):
 
         *oauth2app.models.Client object*"""
         if not self.valid:
-            self.validate()
+            raise UnvalidatedRequest("This request is invalid or has not "
+                "been validated.")
         return self.access_token.client
 
     client = property(_get_client)
@@ -276,10 +280,16 @@ class JSONAuthenticator(Authenticator):
 
     * *scope:* A iterable of oauth2app.models.AccessRange objects.
     """
-    def __init__(self, request, scope=None):
-        Authenticator.__init__(self, request, scope=scope)
+    
+    callback = None
+    
+    def __init__(self, scope=None):
+        Authenticator.__init__(self, scope=scope)
+        
+    def validate(self, request):
         self.callback = request.REQUEST.get('callback')
-
+        return Authenticator.validate(self, request)
+        
     def response(self, data):
         """Returns a HttpResponse object of JSON serialized data.
 

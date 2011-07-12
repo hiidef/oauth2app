@@ -71,21 +71,14 @@ class InvalidScope(AccessTokenException):
 
 @csrf_exempt
 def handler(request):
-    """Django view that handles the token endpoint. Returns a JSON formatted
-    authorization code.
-
+    """Token access handler. Conveneince function that wraps the Handler() 
+    callable.
+    
     **Args:**
 
     * *request:* Django HttpRequest object.
-
     """
-    token_generator = TokenGenerator(request)
-    try:
-        token_generator.validate()
-    except AccessTokenException, e:
-        print token_generator.error_response()
-        return token_generator.error_response()
-    return token_generator.grant_response()
+    return TokenGenerator()(request)
 
 
 class TokenGenerator(object):
@@ -113,10 +106,10 @@ class TokenGenerator(object):
     access_token = None
     user = None
     error = None
-
+    request = None
+    
     def __init__(
             self, 
-            request, 
             scope=None,
             authentication_method=AUTHENTICATION_METHOD,
             refreshable=REFRESHABLE):
@@ -131,6 +124,17 @@ class TokenGenerator(object):
             self.authorized_scope = set([scope.key])
         else:
             self.authorized_scope = set([x.key for x in scope])
+
+    @csrf_exempt
+    def __call__(self, request):
+        """Django view that handles the token endpoint. Returns a JSON formatted
+        authorization code.
+
+        **Args:**
+
+        * *request:* Django HttpRequest object.
+
+        """
         self.grant_type = request.REQUEST.get('grant_type')
         self.client_id = request.REQUEST.get('client_id')
         self.client_secret = request.POST.get('client_secret')
@@ -149,6 +153,11 @@ class TokenGenerator(object):
         # Optional json callback
         self.callback = request.REQUEST.get('callback')
         self.request = request
+        try:
+            self.validate()
+        except AccessTokenException, e:
+            return self.error_response()
+        return self.grant_response()
 
     def validate(self):
         """Validate the request. Raises an AccessTokenException if the
@@ -344,7 +353,7 @@ class TokenGenerator(object):
             data["token_type"] = "bearer"
         if access_token.refreshable:
             data['refresh_token'] = access_token.refresh_token
-        if self.scope:
+        if self.scope is not None:
             data['scope'] = ' '.join(self.scope)
         json_data = dumps(data)
         if self.callback is not None:

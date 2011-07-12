@@ -21,9 +21,9 @@ def missing_redirect_uri(request):
 
 @login_required
 def authorize(request):
-    authorizer = Authorizer(request)
+    authorizer = Authorizer()
     try:
-        authorizer.validate()
+        authorizer.validate(request)
     except MissingRedirectURI, e:
         return HttpResponseRedirect("/oauth2/missing_redirect_uri")
     except AuthorizationException, e:

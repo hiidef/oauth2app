@@ -66,15 +66,14 @@ Create authorize and missing_redirect_uri handlers. ::
 
     @login_required
     def authorize(request):
-        authorizer = Authorizer(request)
+        authorizer = Authorizer()
         try:
-            # Validate the request.
-            authorizer.validate()
+            authorizer.validate(request)
         except MissingRedirectURI, e:
-            # No redirect_uri was specified.
             return HttpResponseRedirect("/oauth2/missing_redirect_uri")
         except AuthorizationException, e:
-            # The request is malformed or invalid. Redirect to redirect_uri with error params.
+            # The request is malformed or invalid. Automatically 
+            # redirects to the provided redirect URL.
             return authorizer.error_redirect()
         if request.method == 'GET':
             template = {}
@@ -103,10 +102,10 @@ Authenticate requests. ::
     from django.http import HttpResponse
     
     def test(request):
-        authenticator = Authenticator(request)
+        authenticator = Authenticator()
         try:
             # Validate the request.
-            authenticator.validate()
+            authenticator.validate(request)
         except AuthenticationException:
             # Return an error response.
             return authenticator.error_response(content="You didn't authenticate.")
@@ -118,10 +117,10 @@ If you want to authenticate JSON requests try the JSONAuthenticator. ::
     from oauth2app.authenticate import JSONAuthenticator, AuthenticationException
 
     def test(request):
-        authenticator = JSONAuthenticator(request)
+        authenticator = JSONAuthenticator()
         try:
             # Validate the request.
-            authenticator.validate()
+            authenticator.validate(request)
         except AuthenticationException:
             # Return a JSON encoded error response.
             return authenticator.error_response()

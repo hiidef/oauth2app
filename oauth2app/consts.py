@@ -46,3 +46,9 @@ if AUTHENTICATION_METHOD not in [BEARER, MAC]:
         "are oauth2app.consts.MAC and oauth2app.consts.BEARER")
 # Authentication realm
 REALM = getattr(settings, "OAUTH2_REALM", "")
+# Grants token style fragments.
+TOKEN = 1
+# Grants code style parameters.
+CODE = 2
+# Grants both style parameters.
+CODE_AND_TOKEN = CODE | TOKEN

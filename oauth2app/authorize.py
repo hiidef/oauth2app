@@ -8,9 +8,8 @@ from urllib import urlencode
 from django.http import absolute_http_url_re, HttpResponseRedirect
 from .exceptions import OAuth2Exception
 from .models import Client, AccessRange, Code, AccessToken, KeyGenerator
-from .lib.response import RESPONSE_TYPES, TOKEN, CODE, CODE_AND_TOKEN
-from .lib.response import is_valid_response_type
 from .consts import ACCESS_TOKEN_EXPIRATION, REFRESHABLE
+from .consts import CODE, TOKEN, CODE_AND_TOKEN
 from .consts import AUTHENTICATION_METHOD, MAC, BEARER, MAC_KEY_LENGTH
 from .lib.uri import add_parameters, add_fragments, normalize
 
@@ -72,16 +71,17 @@ class InvalidScope(AuthorizationException):
     """The requested scope is invalid, unknown, or malformed."""
     error = 'invalid_scope'
 
-    
+
+RESPONSE_TYPES = {
+    "code":CODE,
+    "token":TOKEN}
+
+
 class Authorizer(object):
     """Access authorizer. Validates access credentials and generates
     a response with an authorization code passed as a parameter to the
     redirect URI, an access token passed as a URI fragment to the redirect
     URI, or both.
-
-    **Args:**
-
-    * *request:* Django HttpRequest object.
 
     **Kwargs:**
 
@@ -100,10 +100,15 @@ class Authorizer(object):
     
     def __init__(
             self, 
-            request, 
             scope=None,
             authentication_method=AUTHENTICATION_METHOD,
-            refreshable=REFRESHABLE):
+            refreshable=REFRESHABLE,    
+            response_type=CODE):
+        if response_type not in [CODE, TOKEN, CODE_AND_TOKEN]:
+            raise OAuth2Exception("Possible values for response_type" 
+                " are oauth2app.consts.CODE, oauth2app.consts.TOKEN, "
+                "oauth2app.consts.CODE_AND_TOKEN")
+        self.authorized_response_type = response_type
         self.refreshable = refreshable
         if authentication_method not in [BEARER, MAC]:
             raise OAuth2Exception("Possible values for authentication_method" 
@@ -115,6 +120,35 @@ class Authorizer(object):
             self.authorized_scope = set([scope.key])
         else:
             self.authorized_scope = set([x.key for x in scope])
+
+    def __call__(self, request):
+        """Validate the request. Returns an error redirect if the 
+        request fails authorization, or a MissingRedirectURI if no 
+        redirect_uri is available.
+        
+        **Args:**
+
+        * *request:* Django HttpRequest object.
+        
+        *Returns HTTP Response redirect*"""   
+        try:
+            self.validate(request)     
+        except AuthorizationException, e:
+            # The request is malformed or invalid. Automatically 
+            # redirects to the provided redirect URL.
+            return self.error_redirect()
+        return self.grant_redirect()
+
+    def validate(self, request):
+        """Validate the request. Raises an AuthorizationException if the 
+        request fails authorization, or a MissingRedirectURI if no 
+        redirect_uri is available.
+        
+        **Args:**
+
+        * *request:* Django HttpRequest object.
+        
+        *Returns None*"""
         self.response_type = request.REQUEST.get('response_type')
         self.client_id = request.REQUEST.get('client_id')
         self.redirect_uri = request.REQUEST.get('redirect_uri')
@@ -124,13 +158,6 @@ class Authorizer(object):
         self.state = request.REQUEST.get('state')
         self.user = request.user
         self.request = request
-        
-    def validate(self):
-        """Validate the request. Raises an AuthorizationException if the 
-        request fails authorization, or a MissingRedirectURI if no 
-        redirect_uri is available.
-        
-        *Returns None*"""
         try:
             self._validate()
         except AuthorizationException, e:
@@ -161,15 +188,12 @@ class Authorizer(object):
         # Check response type
         if self.response_type is None:
             raise InvalidRequest('response_type is a required parameter.')
-        if self.response_type not in RESPONSE_TYPES:
-            raise InvalidRequest("No such response " 
-                "type: %s" % self.response_type)
+        if self.response_type not in ["code", "token"]:
+            raise InvalidRequest("No such response type %s" % self.response_type)
         # Response type
-        if not is_valid_response_type(
-                RESPONSE_TYPES[self.response_type], 
-                self.client.authorized_reponse_types):
-            raise UnauthorizedClient("Response type %s not allowed for "
-                "client" % self.response_type)        
+        if self.authorized_response_type & RESPONSE_TYPES[self.response_type] == 0:
+            raise UnauthorizedClient("Response type %s not allowed." % 
+                self.response_type)        
         if not absolute_http_url_re.match(self.redirect_uri):
             raise InvalidRequest('Absolute URI required for redirect_uri')
         # Scope 
@@ -209,7 +233,11 @@ class Authorizer(object):
         parameters = {'error': e.error, 'error_description': u'%s' % e.message}
         if self.state is not None:
             parameters['state'] = self.state
-        redirect_uri = add_parameters(self.redirect_uri, parameters)
+        redirect_uri = self.redirect_uri
+        if self.authorized_response_type & CODE != 0:
+            redirect_uri = add_parameters(redirect_uri, parameters)
+        if self.authorized_response_type & TOKEN != 0:
+            redirect_uri = add_fragments(redirect_uri, parameters)
         return HttpResponseRedirect(redirect_uri)
  
     def _query_string(self):
@@ -249,12 +277,11 @@ class Authorizer(object):
         if self.user.is_authenticated():
             parameters = {}
             fragments = {}
-            response_type = RESPONSE_TYPES[self.response_type]
             if self.scope is not None:
                 access_ranges = list(AccessRange.objects.filter(key__in=self.scope))
             else:
                 access_ranges = []
-            if response_type in [CODE, CODE_AND_TOKEN]:
+            if RESPONSE_TYPES[self.response_type] & CODE != 0:
                 code = Code.objects.create(
                     user=self.user, 
                     client=self.client,
@@ -262,7 +289,7 @@ class Authorizer(object):
                 code.scope = access_ranges
                 code.save()
                 parameters['code'] = code.key
-            if response_type in [TOKEN, CODE_AND_TOKEN]:
+            if RESPONSE_TYPES[self.response_type] & TOKEN != 0:
                 access_token = AccessToken.objects.create(
                     user=self.user,
                     client=self.client)
@@ -271,7 +298,8 @@ class Authorizer(object):
                 if access_token.refreshable:
                     fragments['refresh_token'] = access_token.refresh_token
                 fragments['expires_in'] = ACCESS_TOKEN_EXPIRATION
-                fragments['scope'] = self.scope
+                if self.scope is not None:
+                    fragments['scope'] = ' '.join(self.scope)
                 if self.authentication_method == MAC:
                     access_token.mac_key = KeyGenerator(MAC_KEY_LENGTH)()
                     fragments["mac_key"] = access_token.mac_key
