@@ -88,7 +88,7 @@
 			</tr>
 		{% for access_token in access_tokens %}
 			<tr>
-				<td><a href="/client/{{ client.key }}">{{ access_token.client.name }}</a></td>
+				<td><a href="/client/{{ access_token.client.key }}">{{ access_token.client.name }}</a></td>
 				<td>
 					{% if access_token.scope.all|length == 0 %}
 						<em>No scope</em>
