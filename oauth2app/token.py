@@ -10,11 +10,11 @@ from django.contrib.auth import authenticate
 from django.views.decorators.csrf import csrf_exempt
 from simplejson import dumps
 from .exceptions import OAuth2Exception
-from .consts import ACCESS_TOKEN_EXPIRATION, REFRESH_TOKEN_LENGTH 
+from .consts import ACCESS_TOKEN_EXPIRATION, REFRESH_TOKEN_LENGTH
 from .consts import AUTHENTICATION_METHOD, MAC, BEARER, MAC_KEY_LENGTH
 from .consts import REFRESHABLE
 from .lib.uri import normalize
-from .models import Client, AccessRange, Code, AccessToken, TimestampGenerator 
+from .models import Client, AccessRange, Code, AccessToken, TimestampGenerator
 from .models import KeyGenerator
 
 
@@ -71,9 +71,9 @@ class InvalidScope(AccessTokenException):
 
 @csrf_exempt
 def handler(request):
-    """Token access handler. Conveneince function that wraps the Handler() 
+    """Token access handler. Conveneince function that wraps the Handler()
     callable.
-    
+
     **Args:**
 
     * *request:* Django HttpRequest object.
@@ -96,7 +96,7 @@ class TokenGenerator(object):
     * *authentication_method:* Type of token to generate. Possible
       values are: oauth2app.consts.MAC and oauth2app.consts.BEARER
       *Default oauth2app.consts.BEARER*
-    * *refreshable:* Boolean value indicating whether issued tokens are 
+    * *refreshable:* Boolean value indicating whether issued tokens are
       refreshable. *Default True*
     """
 
@@ -107,15 +107,15 @@ class TokenGenerator(object):
     user = None
     error = None
     request = None
-    
+
     def __init__(
-            self, 
+            self,
             scope=None,
             authentication_method=AUTHENTICATION_METHOD,
             refreshable=REFRESHABLE):
         self.refreshable = refreshable
         if authentication_method not in [BEARER, MAC]:
-            raise OAuth2Exception("Possible values for authentication_method" 
+            raise OAuth2Exception("Possible values for authentication_method"
                 " are oauth2app.consts.MAC and oauth2app.consts.BEARER")
         self.authentication_method = authentication_method
         if scope is None:
