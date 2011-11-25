@@ -18,6 +18,13 @@ Usage
    models
    settings
 
+Tests
+-----
+
+* See https://github.com/hiidef/oauth2app/tree/develop/tests/testsite
+
+.. include:: ../tests/testsite/README.rst
+
 To Do
 -----
 

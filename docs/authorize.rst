@@ -20,10 +20,10 @@ return a redirect response to the client's redirect_uri with information on the 
     @login_required
     def authorize(request):
         scope = AccessRange.objects.get(key="last_login")
-        authorizer = Authorizer(request, scope=scope)
+        authorizer = Authorizer(scope=scope)
         try:
             # Validate the request.
-            authorizer.validate()
+            authorizer.validate(request)
         except MissingRedirectURI, e:
             # No redirect_uri was specified.
             return HttpResponseRedirect("/oauth2/missing_redirect_uri")

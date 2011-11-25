@@ -10,11 +10,11 @@ from django.contrib.auth import authenticate
 from django.views.decorators.csrf import csrf_exempt
 from simplejson import dumps
 from .exceptions import OAuth2Exception
-from .consts import ACCESS_TOKEN_EXPIRATION, REFRESH_TOKEN_LENGTH 
+from .consts import ACCESS_TOKEN_EXPIRATION, REFRESH_TOKEN_LENGTH
 from .consts import AUTHENTICATION_METHOD, MAC, BEARER, MAC_KEY_LENGTH
 from .consts import REFRESHABLE
 from .lib.uri import normalize
-from .models import Client, AccessRange, Code, AccessToken, TimestampGenerator 
+from .models import Client, AccessRange, Code, AccessToken, TimestampGenerator
 from .models import KeyGenerator
 
 
@@ -71,21 +71,14 @@ class InvalidScope(AccessTokenException):
 
 @csrf_exempt
 def handler(request):
-    """Django view that handles the token endpoint. Returns a JSON formatted
-    authorization code.
+    """Token access handler. Conveneince function that wraps the Handler()
+    callable.
 
     **Args:**
 
     * *request:* Django HttpRequest object.
-
     """
-    token_generator = TokenGenerator(request)
-    try:
-        token_generator.validate()
-    except AccessTokenException, e:
-        print token_generator.error_response()
-        return token_generator.error_response()
-    return token_generator.grant_response()
+    return TokenGenerator()(request)
 
 
 class TokenGenerator(object):
@@ -100,11 +93,10 @@ class TokenGenerator(object):
 
     * *scope:* An iterable of oauth2app.models.AccessRange objects representing
       the scope the token generator will grant. *Default None*
-    * *authentication_method:* Accepted authentication methods. Possible
-      values are: oauth2app.consts.MAC, oauth2app.consts.BEARER, 
-      oauth2app.consts.MAC | oauth2app.consts.BEARER, 
+    * *authentication_method:* Type of token to generate. Possible
+      values are: oauth2app.consts.MAC and oauth2app.consts.BEARER
       *Default oauth2app.consts.BEARER*
-    * *refreshable:* Boolean value indicating whether issued tokens are 
+    * *refreshable:* Boolean value indicating whether issued tokens are
       refreshable. *Default True*
     """
 
@@ -114,18 +106,17 @@ class TokenGenerator(object):
     access_token = None
     user = None
     error = None
+    request = None
 
     def __init__(
-            self, 
-            request, 
+            self,
             scope=None,
             authentication_method=AUTHENTICATION_METHOD,
             refreshable=REFRESHABLE):
         self.refreshable = refreshable
-        if authentication_method not in [BEARER, MAC, BEARER | MAC]:
-            raise OAuth2Exception("Possible values for authentication_method" 
-                " are oauth2app.consts.MAC, oauth2app.consts.BEARER, "
-                "oauth2app.consts.MAC | oauth2app.consts.BEARER")
+        if authentication_method not in [BEARER, MAC]:
+            raise OAuth2Exception("Possible values for authentication_method"
+                " are oauth2app.consts.MAC and oauth2app.consts.BEARER")
         self.authentication_method = authentication_method
         if scope is None:
             self.authorized_scope = None
@@ -133,6 +124,17 @@ class TokenGenerator(object):
             self.authorized_scope = set([scope.key])
         else:
             self.authorized_scope = set([x.key for x in scope])
+
+    @csrf_exempt
+    def __call__(self, request):
+        """Django view that handles the token endpoint. Returns a JSON formatted
+        authorization code.
+
+        **Args:**
+
+        * *request:* Django HttpRequest object.
+
+        """
         self.grant_type = request.REQUEST.get('grant_type')
         self.client_id = request.REQUEST.get('client_id')
         self.client_secret = request.POST.get('client_secret')
@@ -151,6 +153,11 @@ class TokenGenerator(object):
         # Optional json callback
         self.callback = request.REQUEST.get('callback')
         self.request = request
+        try:
+            self.validate()
+        except AccessTokenException, e:
+            return self.error_response()
+        return self.grant_response()
 
     def validate(self):
         """Validate the request. Raises an AccessTokenException if the
@@ -338,12 +345,15 @@ class TokenGenerator(object):
         data = {
             'access_token': access_token.token,
             'expire_in': ACCESS_TOKEN_EXPIRATION}
-        if self.authentication_method & MAC != 0:
+        if self.authentication_method == MAC:
+            data["token_type"] = "mac"
             data["mac_key"] = access_token.mac_key
             data["mac_algorithm"] = "hmac-sha-256"
+        elif self.authentication_method == BEARER:
+            data["token_type"] = "bearer"
         if access_token.refreshable:
             data['refresh_token'] = access_token.refresh_token
-        if self.scope:
+        if self.scope is not None:
             data['scope'] = ' '.join(self.scope)
         json_data = dumps(data)
         if self.callback is not None:
@@ -360,7 +370,7 @@ class TokenGenerator(object):
             user=self.code.user,
             client=self.client,
             refreshable=self.refreshable)
-        if self.authentication_method & MAC != 0:
+        if self.authentication_method == MAC:
             access_token.mac_key = KeyGenerator(MAC_KEY_LENGTH)()
         access_ranges = list(AccessRange.objects.filter(key__in=self.scope))
         access_token.scope = access_ranges
@@ -374,7 +384,7 @@ class TokenGenerator(object):
             user=self.user,
             client=self.client,
             refreshable=self.refreshable)
-        if self.authentication_method & MAC != 0:
+        if self.authentication_method == MAC:
             access_token.mac_key = KeyGenerator(MAC_KEY_LENGTH)()
         access_ranges = list(AccessRange.objects.filter(key__in=self.scope))
         access_token.scope = access_ranges
@@ -396,7 +406,7 @@ class TokenGenerator(object):
             user=self.client.user,
             client=self.client,
             refreshable=self.refreshable)
-        if self.authentication_method & MAC != 0:
+        if self.authentication_method == MAC:
             access_token.mac_key = KeyGenerator(MAC_KEY_LENGTH)()
         access_ranges = list(AccessRange.objects.filter(key__in=self.scope))
         self.access_token.scope = access_ranges

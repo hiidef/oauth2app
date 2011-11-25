@@ -13,7 +13,6 @@ from .consts import CLIENT_KEY_LENGTH, CLIENT_SECRET_LENGTH
 from .consts import ACCESS_TOKEN_LENGTH, REFRESH_TOKEN_LENGTH
 from .consts import ACCESS_TOKEN_EXPIRATION, MAC_KEY_LENGTH, REFRESHABLE
 from .consts import CODE_KEY_LENGTH, CODE_EXPIRATION
-from .lib.response import CODE
 
 
 class TimestampGenerator(object):
@@ -68,9 +67,6 @@ class Client(models.Model):
       random string*
     * *redirect_uri:* A string representing the client redirect_uri. 
       *Default None*
-    * *authorized_reponse_types:* An integer representing the bit represented 
-      authorized response types. Example: oauth2app.lib.response.TOKEN | 
-      oauth2app.lib.response.CODE. *Default oauth2app.lib.response.CODE*
       
     """
     name = models.CharField(max_length=256)
@@ -86,8 +82,6 @@ class Client(models.Model):
         max_length=CLIENT_SECRET_LENGTH, 
         default=KeyGenerator(CLIENT_SECRET_LENGTH))
     redirect_uri = models.URLField(null=True, blank=True)
-    authorized_reponse_types = models.PositiveIntegerField(
-        default=CODE)
 
 
 class AccessRange(models.Model):
@@ -193,4 +187,14 @@ class Code(models.Model):
     redirect_uri = models.URLField(null=True, blank=True)
     scope = models.ManyToManyField(AccessRange)
     
+class MACNonce(models.Model):
+    """Stores Nonce strings for use with MAC Authentication.
 
+    **Args:**
+    
+    * *access_token:* A oauth2app.models.AccessToken object
+    * *nonce:* A unique nonce string.
+    
+    """
+    access_token = models.ForeignKey(AccessToken)
+    nonce = models.CharField(max_length=30, db_index=True)

@@ -102,9 +102,8 @@ Authentication method
 
    OAUTH2_AUTHENTICATION_METHOD
 
-Authentication method. Possible values are oauth2app.consts.MAC,  
-oauth2app.consts.BEARER, or (oauth2app.consts.MAC | oauth2app.consts.BEARER)
-to indicate both methods are acceptable.
+Authentication method. Possible values are oauth2app.consts.MAC and 
+oauth2app.consts.BEARER.
 
 For Bearer see http://tools.ietf.org/html/draft-ietf-oauth-saml2-bearer-03
 and http://tools.ietf.org/html/draft-ietf-oauth-v2-bearer-04

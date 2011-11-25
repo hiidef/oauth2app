@@ -8,7 +8,6 @@ from django.contrib import auth
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from oauth2app.models import Client, AccessRange
-from oauth2app.lib.response import TOKEN, CODE, CODE_AND_TOKEN
 from .forms import SignupForm, LoginForm, CreateClientForm, ClientRemoveForm
 
 @login_required
@@ -19,8 +18,7 @@ def clients(request):
         if form.is_valid():
             Client.objects.create(
                 name=form.cleaned_data["name"],
-                user=request.user,
-                authorized_reponse_types=TOKEN | CODE | CODE_AND_TOKEN)
+                user=request.user)
         elif remove_form.is_valid():
             Client.objects.filter(
                 id=remove_form.cleaned_data["client_id"]).delete()
@@ -71,7 +69,6 @@ def signup(request):
                     form.cleaned_data["username"],
                     form.cleaned_data["email"],
                     form.cleaned_data["password1"],)
-            user.save()
             user = auth.authenticate(
                     username=form.cleaned_data["username"],
                     password=form.cleaned_data["password1"])

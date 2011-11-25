@@ -2,7 +2,6 @@
 
 import os
 
-
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
@@ -13,7 +12,7 @@ MANAGERS = ADMINS
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3', 
-        'NAME': 'mysite.sqlite',      
+        'NAME': 'testsite.sqlite',      
         'USER': '',      
         'PASSWORD': '',  
         'HOST': '',      
@@ -73,7 +72,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
 )
 
-ROOT_URLCONF = 'mysite.urls'
+ROOT_URLCONF = 'testsite.urls'
 
 TEMPLATE_DIRS = (os.path.join(os.path.dirname(__file__), 'templates'),)
 
@@ -84,12 +83,8 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'mysite.apps.base',
-    'mysite.apps.client',
-    'mysite.apps.account',
-    'mysite.apps.oauth2',
-    'mysite.apps.api',
-    'uni_form',
+    'testsite.apps.api',
+    'testsite.apps.oauth2',
     'oauth2app')
 
 LOGGING = {
@@ -110,3 +105,10 @@ LOGGING = {
     }
 }
 
+TEST_RUNNER = 'django-test-coverage.runner.run_tests'
+COVERAGE_MODULES = (
+    'oauth2app.authenticate', 
+    'oauth2app.authorize', 
+    'oauth2app.models', 
+    'oauth2app.token',
+    'oauth2app.lib.uri',)

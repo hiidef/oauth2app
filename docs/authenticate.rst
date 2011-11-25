@@ -17,10 +17,10 @@ the appropriate OAuth2 headers. ::
 
     def test(request):
         scope = AccessRange.objects.get(key="test_scope")
-        authenticator = Authenticator(request, scope=scope)
+        authenticator = Authenticator(scope=scope)
         try:
             # Validate the request.
-            authenticator.validate()
+            authenticator.validate(request)
         except AuthenticationException:
             # Return an error response.
             return authenticator.error_response(content="You didn't authenticate.")
@@ -41,10 +41,10 @@ JSONAuthenticator:response() will serialize an object and return a formatted Htt
     from oauth2app.authenticate import JSONAuthenticator, AuthenticationException
 
     def test(request):
-        authenticator = JSONAuthenticator(request)
+        authenticator = JSONAuthenticator()
         try:
             # Validate the request.
-            authenticator.validate()
+            authenticator.validate(request)
         except AuthenticationException:
             # Return a JSON encoded error response.
             return authenticator.error_response()
@@ -65,5 +65,3 @@ To Do
 .. todo::
    MAC Authentication
    
-.. todo::
-   Check for access token expiration
