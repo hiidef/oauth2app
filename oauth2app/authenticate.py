@@ -119,7 +119,6 @@ class Authenticator(object):
             self.attempted_validation = True
             self._validate_bearer(self.bearer_token)
             self.valid = True
-            return
         else:
             raise InvalidRequest("Request authentication failed, no "
                 "authentication credentials provided.")
