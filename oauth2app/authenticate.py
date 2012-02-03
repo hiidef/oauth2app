@@ -63,11 +63,13 @@ class Authenticator(object):
     auth_value = None
     error = None
     attempted_validation = False
+    authorized_scope_intersect = None
 
     def __init__(
             self, 
             scope=None, 
-            authentication_method=AUTHENTICATION_METHOD):         
+            authentication_method=AUTHENTICATION_METHOD,
+            scope_match='full'):         
         if authentication_method not in [BEARER, MAC, BEARER | MAC]:
             raise OAuth2Exception("Possible values for authentication_method" 
                 " are oauth2app.consts.MAC, oauth2app.consts.BEARER, "
@@ -79,6 +81,7 @@ class Authenticator(object):
             self.authorized_scope = set([scope.key])
         else:
             self.authorized_scope = set([x.key for x in scope])
+        self.scope_match = scope_match
 
     def validate(self, request):
         """Validate the request. Raises an AuthenticationException if the
@@ -126,8 +129,10 @@ class Authenticator(object):
             token_scope = set([x.key for x in self.access_token.scope.all()])
             new_scope = self.authorized_scope - token_scope
             if len(new_scope) > 0:
-                raise InsufficientScope(("Access token has insufficient "
-                    "scope: %s") % ','.join(self.authorized_scope))
+                if self.scope_match == 'full':
+                    raise InsufficientScope(("Access token has insufficient "
+                        "scope: %s") % ','.join(self.authorized_scope))
+                elif self.scope_match == 'intersect': self.authorized_scope_intersect = self.authorized_scope.intersection(token_scope)
         now = TimestampGenerator()()
         if self.access_token.expire < now:
             raise InvalidToken("Token is expired")
