@@ -344,7 +344,7 @@ class TokenGenerator(object):
             access_token = self._get_client_credentials_token()
         data = {
             'access_token': access_token.token,
-            'expire_in': ACCESS_TOKEN_EXPIRATION}
+            'expires_in': ACCESS_TOKEN_EXPIRATION}
         if self.authentication_method == MAC:
             data["token_type"] = "mac"
             data["mac_key"] = access_token.mac_key
