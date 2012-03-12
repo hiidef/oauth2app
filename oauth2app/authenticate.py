@@ -6,7 +6,7 @@
 
 from hashlib import sha256
 from urlparse import parse_qsl
-from simplejson import dumps
+from json import dumps
 from django.conf import settings
 from django.http import HttpResponse
 from .exceptions import OAuth2Exception
