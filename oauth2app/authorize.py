@@ -4,7 +4,6 @@
 """OAuth 2.0 Authorization"""
 
 
-import simplejson as json
 from django.http import absolute_http_url_re, HttpResponse, HttpResponseRedirect, HttpResponseBadRequest
 from urllib import urlencode
 from .consts import ACCESS_TOKEN_EXPIRATION, REFRESHABLE

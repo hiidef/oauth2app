@@ -1,6 +1,5 @@
 #-*- coding: utf-8 -*-
 
-from simplejson import loads
 from base64 import b64encode
 from urlparse import urlparse, parse_qs
 from urllib import urlencode
