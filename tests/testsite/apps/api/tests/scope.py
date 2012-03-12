@@ -1,6 +1,6 @@
 #-*- coding: utf-8 -*-
 
-from simplejson import loads
+import json
 from base64 import b64encode
 from urlparse import urlparse, parse_qs
 from urllib import urlencode
@@ -68,7 +68,7 @@ class ScopeTestCase(unittest.TestCase):
             "/oauth2/token", 
             parameters, 
             HTTP_AUTHORIZATION="Basic %s" % basic_auth)
-        token = loads(response.content)["access_token"]
+        token = json.loads(response.content)["access_token"]
         # Sufficient scope.
         response = client.get(
             "/api/first_name_str", 
@@ -112,7 +112,7 @@ class ScopeTestCase(unittest.TestCase):
             "/oauth2/token", 
             parameters, 
             HTTP_AUTHORIZATION="Basic %s" % basic_auth)
-        token = loads(response.content)["access_token"]
+        token = json.loads(response.content)["access_token"]
         # Sufficient scope.
         response = client.get(
             "/api/email_str", 
@@ -158,7 +158,7 @@ class ScopeTestCase(unittest.TestCase):
             "/oauth2/token", 
             parameters, 
             HTTP_AUTHORIZATION="Basic %s" % basic_auth)
-        token = loads(response.content)["access_token"]
+        token = json.loads(response.content)["access_token"]
         # Sufficient scope.
         response = client.get(
             "/api/first_and_last_name_str", 

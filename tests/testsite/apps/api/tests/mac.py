@@ -1,6 +1,6 @@
 #-*- coding: utf-8 -*-
 
-from simplejson import loads
+import json
 from base64 import b64encode
 from urlparse import urlparse, parse_qs
 from urllib import urlencode
@@ -65,5 +65,5 @@ class MACTestCase(unittest.TestCase):
             "/oauth2/token_mac", 
             parameters, 
             HTTP_AUTHORIZATION="Basic %s" % basic_auth)
-        token = loads(response.content)
+        token = json.loads(response.content)
         

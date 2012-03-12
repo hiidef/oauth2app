@@ -11,12 +11,12 @@ MANAGERS = ADMINS
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3', 
-        'NAME': 'testsite.sqlite',      
-        'USER': '',      
-        'PASSWORD': '',  
-        'HOST': '',      
-        'PORT': '',      
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'testsite.sqlite',
+        'USER': '',
+        'PASSWORD': '',
+        'HOST': '',
+        'PORT': '',
     }
 }
 
@@ -105,10 +105,10 @@ LOGGING = {
     }
 }
 
-TEST_RUNNER = 'django-test-coverage.runner.run_tests'
-COVERAGE_MODULES = (
-    'oauth2app.authenticate', 
-    'oauth2app.authorize', 
-    'oauth2app.models', 
-    'oauth2app.token',
-    'oauth2app.lib.uri',)
+# TEST_RUNNER = 'django-test-coverage.runner.run_tests'
+# COVERAGE_MODULES = (
+#     'oauth2app.authenticate',
+#     'oauth2app.authorize',
+#     'oauth2app.models',
+#     'oauth2app.token',
+#     'oauth2app.lib.uri',)
