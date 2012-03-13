@@ -1,11 +1,19 @@
 from setuptools import setup, find_packages
+import codecs
+import os
+import sys
+
+def read(fname):
+    return codecs.open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(
 
     name = "oauth2app",
 
     version = "0.3.0",
-
+    
+    long_description=read('README.rst'),
+    
     packages = find_packages(),
 
     install_requires = ['Django>=1.2.3', 'simplejson>=2.1.5', "django-uni-form>=0.8.0"],
