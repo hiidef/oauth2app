@@ -90,7 +90,11 @@ INSTALLED_APPS = (
     'mysite.apps.oauth2',
     'mysite.apps.api',
     'uni_form',
-    'oauth2app')
+    'oauth2app',
+    'django_nose',
+)
+
+TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 
 LOGGING = {
     'version': 1,
