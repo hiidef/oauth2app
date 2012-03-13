@@ -7,4 +7,5 @@ urlpatterns = patterns('',
     (r'^client/', include('mysite.apps.client.urls')),
     (r'^oauth2/', include('mysite.apps.oauth2.urls')),
     (r'^api/', include('mysite.apps.api.urls')),
+    url(r'oauth2app/', include('oauth2app.urls')),
 )

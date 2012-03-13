@@ -7,8 +7,8 @@ from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 
 from oauth2app import urls
-from oauth2app.models import Client
 from oauth2app.views import AuthorizeView
+from oauth2app.models import Client, Code
 from oauth2app.authorize import MissingRedirectURI
 
 def patch_request(request):
@@ -63,18 +63,18 @@ class TestAuthorizeViews(TestCase):
         response = self.view(request)
         self.assertTrue(response['Location'].startswith(self.redirect_uri))
 
-    def _test_success(self):
-        # create client user
-        # create client
-        # create customer user
+    def test_success(self):
         user = User.objects.create(username='User')
-        # run view with client id
         request = patch_request(self.factory.post(self.url, {
             'connect': 'yes',
             'redirect_uri': self.redirect_uri,
             'client_id': self.client.key,
+            'response_type': 'code',
         }))
-        authorizer = Authorizer()
-        authorize_endpoint = authorizer.validate(request)
-        # Check if token existe for customer user and client
+        # We need a real user
+        request.user = user
+        response = self.view(request)
+        # Check if an access code exists for customer user and client
+        self.assertTrue(
+            Code.objects.filter(user=user, client=self.client).exists())
 
