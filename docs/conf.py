@@ -18,10 +18,10 @@ on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #sys.path.insert(0, os.path.abspath('.'))
 
-sys.path.insert(0, os.path.abspath('../'))
-sys.path.insert(0, os.path.abspath('../examples'))
-from django.conf import settings
-settings.configure(DEBUG=True)
+#sys.path.insert(0, os.path.abspath('../'))
+#sys.path.insert(0, os.path.abspath('../examples'))
+#from django.conf import settings
+#settings.configure(DEBUG=True)
 
 # -- General configuration -----------------------------------------------------
 
