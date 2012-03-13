@@ -7,9 +7,9 @@
 Installation
 ------------
 
-If easy_install is available, you can use: ::
+Install latest stable version into your python path using pip. ::
 
-    easy_install https://github.com/hiidef/oauth2app/tarball/master
+    pip install oauth2app
 
 Introduction
 ------------
