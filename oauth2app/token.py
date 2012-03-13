@@ -155,7 +155,7 @@ class TokenGenerator(object):
         self.request = request
         try:
             self.validate()
-        except AccessTokenException, e:
+        except AccessTokenException:
             return self.error_response()
         return self.grant_response()
 
@@ -166,7 +166,7 @@ class TokenGenerator(object):
         *Returns None*"""
         try:
             self._validate()
-        except AccessTokenException, e:
+        except AccessTokenException as e:
             self.error = e
             raise e
         self.valid = True

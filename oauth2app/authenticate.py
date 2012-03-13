@@ -99,7 +99,7 @@ class Authenticator(object):
         self.request_port = self.request.META.get("SERVER_PORT")
         try:
             self._validate()
-        except AuthenticationException, e:
+        except AuthenticationException as e:
             self.error = e
             raise e
         self.valid = True
