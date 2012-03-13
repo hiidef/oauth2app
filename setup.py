@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
 
-    name = "oauth2app",
+    name = "oauth2app-draft-16",
 
     version = "0.3.0",
 
