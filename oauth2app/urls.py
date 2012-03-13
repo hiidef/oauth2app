@@ -8,14 +8,14 @@ from oauth2app.token import handler
 urlpatterns = patterns('',
     url(r'^missing_redirect_uri/$',
         views.MissingRedirectUriView.as_view(),
-        name='missing_redirect_uri'),
+        name='oauth2app_missing_redirect_uri'),
 
     url(r'authorized/$',
         views.AuthorizeView.as_view(),
-        name='authorize'),
+        name='oauth2app_authorize'),
 
     url(r'^token/$',
         handler,
-        name='handler'),
+        name='oauth2app_handler'),
 
 )

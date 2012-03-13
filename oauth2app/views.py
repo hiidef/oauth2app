@@ -15,7 +15,7 @@ class MissingRedirectUriView(TemplateView):
 
 
 class AuthorizeView(FormView):
-    auth_form_class = AuthorizeForm
+    form_class = AuthorizeForm
     authorizer_class = Authorizer
     template_name = 'oauth2app/authorize.html'
     invalid_form_message = 'Please check the values and try again'
@@ -31,12 +31,14 @@ class AuthorizeView(FormView):
 
     def authorizer_is_valid(self):
         try:
-            authorizer.validate(self.request)
+            self.authorizer.validate(self.request)
         except AuthorizationException, e:
             return False
         return True
 
     def dispatch(self, request, *args, **kwargs):
+        self.request = request
+
         self.authorizer = self.get_authorizer()
 
         if not self.authorizer_is_valid():
@@ -45,7 +47,7 @@ class AuthorizeView(FormView):
         return super(AuthorizeView, self).dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
-        kwargs['form_action'] = '%s?%s' % (reverse('oauth2app:autorize'),
+        kwargs['form_action'] = '%s?%s' % (reverse('oauth2app_authorize'),
             self.authorizer.query_string)
         kwargs['client'] = self.authorizer.client
         kwargs['access_ranges'] = self.authorizer.access_ranges
@@ -80,6 +82,6 @@ class AuthorizeView(FormView):
         """
         In the case of a tampered form, redirect to the form view
         """
-        return reverse('oauth2app:authorize')
+        return reverse('oauth2app_authorize')
 
 
