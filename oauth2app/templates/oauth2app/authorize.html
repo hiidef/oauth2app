@@ -1,0 +1,22 @@
+<html>
+<body>
+<h1>Authorize {{client.name}}?</h1>
+<form method="post" action="{{form_action}}">{% csrf_token %}
+<p>Grant “{{ client.name }}” access to {% if access_ranges %}the following parts of{% endif %} your account?</p>
+{% if access_ranges %}
+<dl>
+{% for access_range in access_ranges %}
+<dt>{{access_range.key}}</dt>
+<dt>{{access_range.description}}</dt>
+{% endfor %}
+</dl>
+{% endif %}
+<p>This allows "{{ client.name }}" to access parts of your sample application user account using authenticated OAuth 2.0 requests.</p>
+<p>
+<input type="submit" name="connect" value="yes"/> or <a href="/">no</a>
+</p>
+</form>
+<hr/>
+<p>This is a test template</p>
+</body>
+</html>

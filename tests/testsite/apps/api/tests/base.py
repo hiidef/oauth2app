@@ -1,6 +1,6 @@
 #-*- coding: utf-8 -*-
 
-from simplejson import loads
+import json
 from django.contrib.auth.models import User
 from oauth2app.models import Client
 from django.test.client import Client as DjangoTestClient
@@ -64,4 +64,4 @@ class BaseTestCase(unittest.TestCase):
             "/oauth2/token", 
             parameters, 
             HTTP_AUTHORIZATION="Basic %s" % basic_auth)
-        return loads(response.content)["access_token"]
+        return json.loads(response.content)["access_token"]
