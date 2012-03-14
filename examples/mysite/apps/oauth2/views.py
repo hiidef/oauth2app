@@ -6,6 +6,7 @@ from django.http import HttpResponseRedirect
 from django.template import RequestContext
 from uni_form.helpers import FormHelper, Submit, Reset
 from django.contrib.auth.decorators import login_required
+from oauth2app.views import AuthorizeView
 from oauth2app.authorize import Authorizer, MissingRedirectURI, AuthorizationException
 from oauth2app.authorize import UnvalidatedRequest, UnauthenticatedUser
 from .forms import AuthorizeForm
@@ -57,3 +58,19 @@ def authorize(request):
             else:
                 return authorizer.error_redirect()
     return HttpResponseRedirect("/")
+
+
+class CustomAuthorizeView(AuthorizeView):
+    def get_context_data(self, **kwargs):
+        ctx = super(CustomAuthorizeView, self).get_context_data(**kwargs)
+
+        # Django Uni-Form helper for pretty rendering
+        helper = FormHelper()
+        no_submit = Submit('connect','No')
+        helper.add_input(no_submit)
+        yes_submit = Submit('connect', 'Yes')
+        helper.add_input(yes_submit)
+        helper.form_action = '/oauth2/authorize?%s' % self.authorizer.query_string
+        helper.form_method = 'POST'
+        ctx['helper'] = helper
+        return ctx
