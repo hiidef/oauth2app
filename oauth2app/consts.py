@@ -52,3 +52,5 @@ TOKEN = 1
 CODE = 2
 # Grants both style parameters.
 CODE_AND_TOKEN = CODE | TOKEN
+# 
+USE_NATIVE_APPLICATION = getattr(settings, "OAUTH2_USE_NATIVE_APPLICATION", False)
