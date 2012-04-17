@@ -409,6 +409,6 @@ class TokenGenerator(object):
         if self.authentication_method == MAC:
             access_token.mac_key = KeyGenerator(MAC_KEY_LENGTH)()
         access_ranges = AccessRange.objects.filter(key__in=self.scope) if self.scope else []
-        self.access_token.scope = access_ranges
-        self.access_token.save()
-        return self.access_token
+        access_token.scope = access_ranges
+        access_token.save()
+        return access_token
