@@ -395,8 +395,10 @@ class TokenGenerator(object):
         """Generate an access token after refresh authorization."""
         self.access_token.refresh_token = KeyGenerator(REFRESH_TOKEN_LENGTH)()
         self.access_token.expire = TimestampGenerator(ACCESS_TOKEN_EXPIRATION)()
-        access_ranges = AccessRange.objects.filter(key__in=self.scope) if self.scope else []
-        self.access_token.scope = access_ranges
+        if self.scope:
+            self.access_token.scope = AccessRange.objects.filter(key__in=self.scope)
+        elif not self.access_token.scope.exists():
+            self.access_token.scope = []
         self.access_token.save()
         return self.access_token
 
