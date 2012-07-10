@@ -81,7 +81,7 @@ class Client(models.Model):
         unique=True,
         max_length=CLIENT_SECRET_LENGTH,
         default=KeyGenerator(CLIENT_SECRET_LENGTH))
-    redirect_uri = models.URLField(null=True)
+    redirect_uri = models.URLField(verify_exists=False, null=True)
 
 
 class AccessRange(models.Model):
@@ -184,7 +184,7 @@ class Code(models.Model):
         default=TimestampGenerator())
     expire = models.PositiveIntegerField(
         default=TimestampGenerator(CODE_EXPIRATION))
-    redirect_uri = models.URLField(null=True)
+    redirect_uri = models.URLField(verify_exists=False, null=True)
     scope = models.ManyToManyField(AccessRange)
 
 
