@@ -122,7 +122,7 @@ class Authorizer(object):
         else:
             self.authorized_scope = set([x.key for x in scope])
 
-    def __call__(self, request):
+    def __call__(self, request, check_scope=True):
         """Validate the request. Returns an error redirect if the
         request fails authorization, or a MissingRedirectURI if no
         redirect_uri is available.
@@ -131,16 +131,21 @@ class Authorizer(object):
 
         * *request:* Django HttpRequest object.
 
+        **Kwargs:**
+
+        * *check_scope:* Check whether AccessRange objects matching scope actually
+          exist (raising InvalidScope, if not). *Default True*
+
         *Returns HTTP Response redirect*"""
         try:
-            self.validate(request)
+            self.validate(request, check_scope=check_scope)
         except AuthorizationException, e:
             # The request is malformed or invalid. Automatically
             # redirects to the provided redirect URL.
             return self.error_redirect()
         return self.grant_redirect()
 
-    def validate(self, request):
+    def validate(self, request, check_scope=True):
         """Validate the request. Raises an AuthorizationException if the
         request fails authorization, or a MissingRedirectURI if no
         redirect_uri is available.
@@ -148,6 +153,11 @@ class Authorizer(object):
         **Args:**
 
         * *request:* Django HttpRequest object.
+
+        **Kwargs:**
+
+        * *check_scope:* Check whether AccessRange objects matching scope actually
+          exist (raising InvalidScope, if not). *Default True*
 
         *Returns None*"""
         self.response_type = request.REQUEST.get('response_type')
@@ -160,14 +170,14 @@ class Authorizer(object):
         self.user = request.user
         self.request = request
         try:
-            self._validate()
+            self._validate(check_scope=check_scope)
         except AuthorizationException, e:
             self._check_redirect_uri()
             self.error = e
             raise e
         self.valid = True
 
-    def _validate(self):
+    def _validate(self, check_scope=True):
         """Validate the request."""
         if self.client_id is None:
             raise InvalidRequest('No client_id')
@@ -201,8 +211,11 @@ class Authorizer(object):
         if self.authorized_scope is not None and self.scope is None:
             self.scope = self.authorized_scope
         if self.scope is not None:
-            self.access_ranges = AccessRange.objects.filter(key__in=self.scope)
-            access_ranges = set(self.access_ranges.values_list('key', flat=True))
+            if check_scope:
+                self.access_ranges = AccessRange.objects.filter(key__in=self.scope)
+                access_ranges = set(self.access_ranges.values_list('key', flat=True))
+            else:
+                access_ranges = set(self.scope)
             difference = access_ranges.symmetric_difference(self.scope)
             if len(difference) != 0:
                 raise InvalidScope("Following access ranges do not "
