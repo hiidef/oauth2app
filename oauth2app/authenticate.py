@@ -51,8 +51,8 @@ class Authenticator(object):
       the scope the authenticator will authenticate.
       *Default None*
     * *authentication_method:* Accepted authentication methods. Possible
-      values are: oauth2app.consts.MAC, oauth2app.consts.BEARER, 
-      oauth2app.consts.MAC | oauth2app.consts.BEARER, 
+      values are: oauth2app.consts.MAC, oauth2app.consts.BEARER,
+      oauth2app.consts.MAC | oauth2app.consts.BEARER,
       *Default oauth2app.consts.BEARER*
 
     """
@@ -61,15 +61,16 @@ class Authenticator(object):
     access_token = None
     auth_type = None
     auth_value = None
+    bearer_token = None
     error = None
     attempted_validation = False
 
     def __init__(
-            self, 
-            scope=None, 
-            authentication_method=AUTHENTICATION_METHOD):         
+            self,
+            scope=None,
+            authentication_method=AUTHENTICATION_METHOD):
         if authentication_method not in [BEARER, MAC, BEARER | MAC]:
-            raise OAuth2Exception("Possible values for authentication_method" 
+            raise OAuth2Exception("Possible values for authentication_method"
                 " are oauth2app.consts.MAC, oauth2app.consts.BEARER, "
                 "oauth2app.consts.MAC | oauth2app.consts.BEARER")
         self.authentication_method = authentication_method
@@ -90,11 +91,12 @@ class Authenticator(object):
 
         *Returns None*"""
         self.request = request
-        self.bearer_token = request.REQUEST.get('bearer_token')
         if "HTTP_AUTHORIZATION" in self.request.META:
             auth = self.request.META["HTTP_AUTHORIZATION"].split()
             self.auth_type = auth[0].lower()
             self.auth_value = " ".join(auth[1:]).strip()
+        else:
+            self.bearer_token = self.request.REQUEST.get('bearer_token')
         self.request_hostname = self.request.META.get("REMOTE_HOST")
         self.request_port = self.request.META.get("SERVER_PORT")
         try:
@@ -166,7 +168,7 @@ class Authenticator(object):
         nonce_timestamp, nonce_string = mac_header["nonce"].split(":")
         mac = sha256("\n".join([
             mac_header["nonce"], # The nonce value generated for the request
-            self.request.method.upper(), # The HTTP request method 
+            self.request.method.upper(), # The HTTP request method
             "XXX", # The HTTP request-URI
             self.request_hostname, # The hostname included in the HTTP request
             self.request_port, # The port as included in the HTTP request
@@ -185,7 +187,7 @@ class Authenticator(object):
         # the determination of staleness is left up to the server to
         # define).
         # 3.  Verify the scope and validity of the MAC credentials.
-        
+
 
     def _get_user(self):
         """The user associated with the valid access token.
@@ -279,16 +281,16 @@ class JSONAuthenticator(Authenticator):
 
     * *scope:* A iterable of oauth2app.models.AccessRange objects.
     """
-    
+
     callback = None
-    
+
     def __init__(self, scope=None):
         Authenticator.__init__(self, scope=scope)
-        
+
     def validate(self, request):
         self.callback = request.REQUEST.get('callback')
         return Authenticator.validate(self, request)
-        
+
     def response(self, data):
         """Returns a HttpResponse object of JSON serialized data.
 
