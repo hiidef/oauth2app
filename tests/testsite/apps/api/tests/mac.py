@@ -1,6 +1,7 @@
 #-*- coding: utf-8 -*-
 
-from simplejson import loads
+try: import simplejson as json
+except ImportError: import json
 from base64 import b64encode
 from urlparse import urlparse, parse_qs
 from urllib import urlencode
@@ -21,32 +22,32 @@ REDIRECT_URI = "http://example.com/callback"
 
 
 class MACTestCase(unittest.TestCase):
-    
+
     user = None
     client_holder = None
     client_application = None
 
     def setUp(self):
         self.user = User.objects.create_user(
-            USER_USERNAME, 
-            USER_EMAIL, 
+            USER_USERNAME,
+            USER_EMAIL,
             USER_PASSWORD)
         self.user.first_name = USER_FIRSTNAME
         self.user.last_name = USER_LASTNAME
         self.user.save()
         self.client = User.objects.create_user(CLIENT_USERNAME, CLIENT_EMAIL)
-        self.client_application = Client.objects.create(    
-            name="TestApplication", 
+        self.client_application = Client.objects.create(
+            name="TestApplication",
             user=self.client)
-    
+
     def tearDown(self):
         self.user.delete()
         self.client.delete()
         self.client_application.delete()
-    
+
     def test_00_mac(self):
         user = DjangoTestClient()
-        user.login(username=USER_USERNAME, password=USER_PASSWORD)      
+        user.login(username=USER_USERNAME, password=USER_PASSWORD)
         parameters = {
             "client_id":self.client_application.key,
             "redirect_uri":REDIRECT_URI,
@@ -62,8 +63,8 @@ class MACTestCase(unittest.TestCase):
             "redirect_uri":REDIRECT_URI}
         basic_auth = b64encode("%s:%s" % (self.client_application.key, self.client_application.secret))
         response = client.get(
-            "/oauth2/token_mac", 
-            parameters, 
+            "/oauth2/token_mac",
+            parameters,
             HTTP_AUTHORIZATION="Basic %s" % basic_auth)
-        token = loads(response.content)
-        
+        token = json.loads(response.content)
+

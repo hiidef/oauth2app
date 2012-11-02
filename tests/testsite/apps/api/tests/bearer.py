@@ -1,6 +1,7 @@
 #-*- coding: utf-8 -*-
 
-from simplejson import loads
+try: import simplejson as json
+except ImportError: import json
 from .base import *
 
 
@@ -10,18 +11,18 @@ class BearerTestCase(BaseTestCase):
         client = DjangoTestClient()
         token = self.get_token()
         response = client.get(
-            "/api/email_str", 
-            {}, 
+            "/api/email_str",
+            {},
             HTTP_AUTHORIZATION="Bearer %s" % token)
-        self.assertEqual(response.status_code, 200) 
+        self.assertEqual(response.status_code, 200)
         response = client.get(
-            "/api/email_str", 
-            {}, 
+            "/api/email_str",
+            {},
             HTTP_AUTHORIZATION="Bearer2 %s" % token)
         self.assertEqual(response.status_code, 401)
         response = client.get(
-            "/api/email_str", 
-            {}, 
+            "/api/email_str",
+            {},
             HTTP_AUTHORIZATION="Bearer !!!%s" % token)
         self.assertEqual(response.status_code, 401)
 
@@ -29,34 +30,34 @@ class BearerTestCase(BaseTestCase):
         client = DjangoTestClient()
         token = self.get_token()
         response = client.get(
-            "/api/email_json", 
-            {}, 
+            "/api/email_json",
+            {},
             HTTP_AUTHORIZATION="Bearer %s" % token)
-        self.assertEqual(response.status_code, 200) 
-        self.assertTrue("email" in loads(response.content))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue("email" in json.loads(response.content))
         response = client.get(
-            "/api/email_json", 
-            {}, 
+            "/api/email_json",
+            {},
             HTTP_AUTHORIZATION="Bearer2 %s" % token)
         self.assertEqual(response.status_code, 401)
-        self.assertTrue("error" in loads(response.content))
+        self.assertTrue("error" in json.loads(response.content))
         response = client.get(
-            "/api/email_json", 
-            {}, 
+            "/api/email_json",
+            {},
             HTTP_AUTHORIZATION="Bearer !!!%s" % token)
         self.assertEqual(response.status_code, 401)
-        self.assertTrue("error" in loads(response.content))
+        self.assertTrue("error" in json.loads(response.content))
 
     def test_02_automatic_fail(self):
         client = DjangoTestClient()
         token = self.get_token()
         response = client.get(
-            "/api/automatic_error_str", 
-            {}, 
+            "/api/automatic_error_str",
+            {},
             HTTP_AUTHORIZATION="Bearer %s" % token)
         self.assertEqual(response.status_code, 401)
         response = client.get(
-            "/api/automatic_error_json", 
-            {}, 
+            "/api/automatic_error_json",
+            {},
             HTTP_AUTHORIZATION="Bearer %s" % token)
         self.assertEqual(response.status_code, 401)

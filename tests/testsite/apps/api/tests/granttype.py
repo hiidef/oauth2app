@@ -1,6 +1,7 @@
 #-*- coding: utf-8 -*-
 
-from simplejson import loads
+try: import simplejson as json
+except ImportError: import json
 from base64 import b64encode
 from django.utils import unittest
 from django.contrib.auth.models import User
@@ -56,4 +57,4 @@ class GrantTypeTestCase(unittest.TestCase):
             "/oauth2/token",
             parameters,
             HTTP_AUTHORIZATION="Basic %s" % basic_auth)
-        token = loads(response.content)
+        token = json.loads(response.content)

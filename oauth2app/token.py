@@ -4,11 +4,12 @@
 """OAuth 2.0 Token Generation"""
 
 
+try: import simplejson as json
+except ImportError: import json
 from base64 import b64encode
 from django.http import HttpResponse
 from django.contrib.auth import authenticate
 from django.views.decorators.csrf import csrf_exempt
-from simplejson import dumps
 from .exceptions import OAuth2Exception
 from .consts import ACCESS_TOKEN_EXPIRATION, REFRESH_TOKEN_LENGTH
 from .consts import AUTHENTICATION_METHOD, MAC, BEARER, MAC_KEY_LENGTH
@@ -313,7 +314,7 @@ class TokenGenerator(object):
         else:
             e = InvalidRequest("Access Denied.")
         data = {'error': e.error, 'error_description': u'%s' % e.message}
-        json_data = dumps(data)
+        json_data = json.dumps(data)
         if self.callback is not None:
             json_data = "%s(%s);" % (self.callback, json_data)
             return HttpResponse(
@@ -355,7 +356,7 @@ class TokenGenerator(object):
             data['refresh_token'] = access_token.refresh_token
         if self.scope is not None:
             data['scope'] = ' '.join(self.scope)
-        json_data = dumps(data)
+        json_data = json.dumps(data)
         if self.callback is not None:
             json_data = "%s(%s);" % (self.callback, json_data)
         response = HttpResponse(
