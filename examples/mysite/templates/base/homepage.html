@@ -45,7 +45,7 @@
 				<td><a href="/client/{{ client.key }}">{{ client.name }}</a></td>
 				<td>
 					<form method="get" action="oauth2/authorize">
-						<input type="hidden" name="redirect_uri" value="http://127.0.0.1:8000/client/{{client.key}}/" />
+						<input type="hidden" name="redirect_uri" value="http://{{ host }}/client/{{client.key}}/" />
 						<input type="hidden" name="response_type" value="code" />
 						<input type="hidden" name="client_id" value="{{client.key}}" />
 						<input type="hidden" name="scope" value="date_joined" />
@@ -54,7 +54,7 @@
 				</td>
 				<td>
 					<form method="get" action="oauth2/authorize">
-						<input type="hidden" name="redirect_uri" value="http://127.0.0.1:8000/client/{{client.key}}/" />
+						<input type="hidden" name="redirect_uri" value="http://{{ host }}/client/{{client.key}}/" />
 						<input type="hidden" name="response_type" value="code" />
 						<input type="hidden" name="client_id" value="{{client.key}}" />
 						<input type="hidden" name="scope" value="last_login" />
@@ -63,7 +63,7 @@
 				</td>
 				<td>
 					<form method="get" action="oauth2/authorize">
-						<input type="hidden" name="redirect_uri" value="http://127.0.0.1:8000/client/{{client.key}}/" />
+						<input type="hidden" name="redirect_uri" value="http://{{ host }}/client/{{client.key}}/" />
 						<input type="hidden" name="response_type" value="code" />
 						<input type="hidden" name="client_id" value="{{client.key}}" />
 						<input type="submit" value="Request" />
