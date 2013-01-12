@@ -4,7 +4,11 @@
 """OAuth 2.0 Authorization"""
 
 
-from django.http import absolute_http_url_re, HttpResponse, HttpResponseRedirect, HttpResponseBadRequest
+from django.http import HttpResponseRedirect
+try:
+    from django.http.request import absolute_http_url_re  # Django 1.5+
+except ImportError:
+    from django.http import absolute_http_url_re
 from urllib import urlencode
 from .consts import ACCESS_TOKEN_EXPIRATION, REFRESHABLE
 from .consts import CODE, TOKEN, CODE_AND_TOKEN
