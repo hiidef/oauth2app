@@ -7,7 +7,10 @@ from urlparse import urlparse, parse_qs
 from urllib import urlencode
 from django.utils import unittest
 from django.test.client import Client as DjangoTestClient
-from django.contrib.auth.models import User
+try:
+    from django.contrib.auth import get_user_model  # Django 1.5+
+except:
+    from django.contrib.auth.models import User
 from oauth2app.models import Client
 
 
@@ -28,14 +31,14 @@ class ScopeTestCase(unittest.TestCase):
     client_application = None
 
     def setUp(self):
-        self.user = User.objects.create_user(
+        self.user = (get_user_model() or User).objects.create_user(
             USER_USERNAME,
             USER_EMAIL,
             USER_PASSWORD)
         self.user.first_name = USER_FIRSTNAME
         self.user.last_name = USER_LASTNAME
         self.user.save()
-        self.client = User.objects.create_user(CLIENT_USERNAME, CLIENT_EMAIL)
+        self.client = (get_user_model() or User).objects.create_user(CLIENT_USERNAME, CLIENT_EMAIL)
         self.client_application = Client.objects.create(
             name="TestApplication",
             user=self.client)
