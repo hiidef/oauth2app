@@ -5,6 +5,7 @@
 
 
 from base64 import b64encode
+from django.db.models.loading import get_model
 from django.http import HttpResponse
 from django.contrib.auth import authenticate
 from django.views.decorators.csrf import csrf_exempt
@@ -13,9 +14,9 @@ except ImportError: import json
 from .exceptions import OAuth2Exception
 from .consts import ACCESS_TOKEN_EXPIRATION, REFRESH_TOKEN_LENGTH, ACCESS_TOKEN_LENGTH
 from .consts import AUTHENTICATION_METHOD, MAC, BEARER, MAC_KEY_LENGTH
-from .consts import REFRESHABLE
+from .consts import REFRESHABLE, CLIENT_MODEL
 from .lib.uri import normalize
-from .models import Client, AccessRange, Code, AccessToken, TimestampGenerator
+from .models import AccessRange, Code, AccessToken, TimestampGenerator
 from .models import KeyGenerator
 
 
@@ -174,6 +175,8 @@ class TokenGenerator(object):
 
     def _validate(self):
         """Validate the request."""
+        ClientModel = get_model(*CLIENT_MODEL.split('.', 1))
+
         # Check response type
         if self.grant_type is None:
             raise InvalidRequest('No grant_type provided.')
@@ -186,8 +189,8 @@ class TokenGenerator(object):
         if self.client_id is None:
             raise InvalidRequest('No client_id')
         try:
-            self.client = Client.objects.get(key=self.client_id)
-        except Client.DoesNotExist:
+            self.client = ClientModel.objects.get(key=self.client_id)
+        except ClientModel.DoesNotExist:
             raise InvalidClient("client_id %s doesn't exist" % self.client_id)
         # Scope
         if self.scope is not None:
