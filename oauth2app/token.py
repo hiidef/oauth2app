@@ -212,13 +212,17 @@ class TokenGenerator(object):
         """Validate the request's access credentials."""
         if self.client_secret is None and "HTTP_AUTHORIZATION" in self.request.META:
             authorization = self.request.META["HTTP_AUTHORIZATION"]
-            auth_type, auth_value = authorization.split()[0:2]
-            if auth_type.lower() == "basic":
-                credentials = "%s:%s" % (self.client.key, self.client.secret)
-                if auth_value != b64encode(credentials):
-                    raise InvalidClient('Client authentication failed.')
-            else:
+            try:
+                auth_type, auth_value = authorization.split()[:2]
+            except ValueError: # malformed Authorization header
                 raise InvalidClient('Client authentication failed.')
+            else:
+                if auth_type.lower() == "basic":
+                    credentials = "%s:%s" % (self.client.key, self.client.secret)
+                    if auth_value != b64encode(credentials):
+                        raise InvalidClient('Client authentication failed.')
+                else:
+                    raise InvalidClient('Client authentication failed.')
         elif self.client_secret != self.client.secret:
             raise InvalidClient('Client authentication failed.')
 
