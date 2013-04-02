@@ -177,7 +177,7 @@ class Authorizer(object):
         except Client.DoesNotExist:
             raise InvalidClient("client_id %s doesn't exist" % self.client_id)
         # Redirect URI
-        if self.redirect_uri is None:
+        if not self.redirect_uri:
             if self.client.redirect_uri is None:
                 raise MissingRedirectURI("No redirect_uri"
                     "provided or registered.")
