@@ -405,7 +405,7 @@ class TokenGenerator(object):
 
     def _get_client_credentials_token(self):
         """Generate an access token after client_credentials authorization."""
-        access_token = AccessToken.objects.create(
+        self.access_token = AccessToken.objects.create(
             user=self.client.user,
             client=self.client,
             refreshable=self.refreshable)
