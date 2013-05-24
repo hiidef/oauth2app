@@ -6,7 +6,11 @@
 
 try: import simplejson as json
 except ImportError: import json
-from django.http import absolute_http_url_re, HttpResponseRedirect
+from django.http import HttpResponseRedirect
+try: # Django >= 1.5
+    from django.http.request import absolute_http_url_re
+except ImportError: # Django < 1.5
+    from django.http import absolute_http_url_re
 from urllib import urlencode
 from .consts import ACCESS_TOKEN_EXPIRATION, REFRESHABLE
 from .consts import CODE, TOKEN, CODE_AND_TOKEN
