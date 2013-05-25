@@ -1,51 +1,21 @@
 #-*- coding: utf-8 -*-
 
-
 """OAuth 2.0 Django Models"""
 
-
-import time
+import datetime
 from hashlib import sha512
 from uuid import uuid4
+
 from django.db import models
 from django.contrib.auth.models import User
+
 from .consts import CLIENT_KEY_LENGTH, CLIENT_SECRET_LENGTH
 from .consts import ACCESS_TOKEN_LENGTH, REFRESH_TOKEN_LENGTH
 from .consts import ACCESS_TOKEN_EXPIRATION, MAC_KEY_LENGTH, REFRESHABLE
 from .consts import CODE_KEY_LENGTH, CODE_EXPIRATION
 
-
-class TimestampGenerator(object):
-    """Callable Timestamp Generator that returns a UNIX time integer.
-
-    **Kwargs:**
-
-    * *seconds:* A integer indicating how many seconds in the future the
-      timestamp should be. *Default 0*
-
-    *Returns int*
-    """
-    def __init__(self, seconds=0):
-        self.seconds = seconds
-
-    def __call__(self):
-        return int(time.time()) + self.seconds
-
-
-class KeyGenerator(object):
-    """Callable Key Generator that returns a random keystring.
-
-    **Args:**
-
-    * *length:* A integer indicating how long the key should be.
-
-    *Returns str*
-    """
-    def __init__(self, length):
-        self.length = length
-
-    def __call__(self):
-        return sha512(uuid4().hex).hexdigest()[0:self.length]
+# helper to generate 512 bit sha key
+key_gen = lambda length: sha512(uuid4().hex).hexdigest()[0:length]
 
 
 class Client(models.Model):
@@ -71,17 +41,17 @@ class Client(models.Model):
     """
     name = models.CharField(max_length=256)
     user = models.ForeignKey(User)
+
     description = models.TextField(null=True, blank=True)
-    key = models.CharField(
-        unique=True,
-        max_length=CLIENT_KEY_LENGTH,
-        default=KeyGenerator(CLIENT_KEY_LENGTH),
-        db_index=True)
-    secret = models.CharField(
-        unique=True,
-        max_length=CLIENT_SECRET_LENGTH,
-        default=KeyGenerator(CLIENT_SECRET_LENGTH))
+    # 30 character random string, default pass in callable
+    key = models.CharField(unique=True, max_length=CLIENT_KEY_LENGTH,
+        default=lambda: key_gen(CLIENT_KEY_LENGTH), db_index=True)
+    # 30 character random string, default pass in callable
+    secret = models.CharField(unique=True, max_length=CLIENT_SECRET_LENGTH,
+        default=lambda: key_gen(CLIENT_SECRET_LENGTH))
     redirect_uri = models.URLField(null=True)
+
+    __unicode__ = lambda self: "%s" % self.name
 
 
 class AccessRange(models.Model):
@@ -100,6 +70,8 @@ class AccessRange(models.Model):
     """
     key = models.CharField(unique=True, max_length=255, db_index=True)
     description = models.TextField(blank=True)
+
+    __unicode__ = lambda self: "%s" % self.key
 
 
 class AccessToken(models.Model):
@@ -126,31 +98,23 @@ class AccessToken(models.Model):
     """
     client = models.ForeignKey(Client)
     user = models.ForeignKey(User)
-    token = models.CharField(
-        unique=True,
-        max_length=ACCESS_TOKEN_LENGTH,
-        default=KeyGenerator(ACCESS_TOKEN_LENGTH),
-        db_index=True)
-    refresh_token = models.CharField(
-        unique=True,
-        blank=True,
-        null=True,
-        max_length=REFRESH_TOKEN_LENGTH,
-        default=KeyGenerator(REFRESH_TOKEN_LENGTH),
-        db_index=True)
-    mac_key = models.CharField(
-        unique=True,
-        blank=True,
-        null=True,
-        max_length=MAC_KEY_LENGTH,
-        default=None)
-    issue = models.PositiveIntegerField(
-        editable=False,
-        default=TimestampGenerator())
-    expire = models.PositiveIntegerField(
-        default=TimestampGenerator(ACCESS_TOKEN_EXPIRATION))
+    # random string representing access key token
+    token = models.CharField(unique=True, max_length=ACCESS_TOKEN_LENGTH,
+        default=lambda: key_gen(ACCESS_TOKEN_LENGTH), db_index=True)
+    refresh_token = models.CharField(unique=True, blank=True, null=True, db_index=True,
+        max_length=REFRESH_TOKEN_LENGTH, default=lambda: key_gen(REFRESH_TOKEN_LENGTH))
+    mac_key = models.CharField(unique=True, blank=True, null=True,
+        max_length=MAC_KEY_LENGTH, default=None)
+    # auto_now_add defaults to now() when created
+    issue = models.DateTimeField(auto_now_add=True, editable=False)
+    # default now + ACCESS_TOKEN_EXPIRATION, need to pass callable function
+    expire = models.DateTimeField(editable=False, default=lambda: 
+        datetime.datetime.now() + datetime.timedelta(seconds=ACCESS_TOKEN_EXPIRATION)) 
+
     scope = models.ManyToManyField(AccessRange)
     refreshable = models.BooleanField(default=REFRESHABLE)
+
+    __unicode__ = lambda self: "%s (%s)" % (self.client, self.user)
 
 
 class Code(models.Model):
@@ -174,16 +138,14 @@ class Code(models.Model):
     """
     client = models.ForeignKey(Client)
     user = models.ForeignKey(User)
-    key = models.CharField(
-        unique=True,
-        max_length=CODE_KEY_LENGTH,
-        default=KeyGenerator(CODE_KEY_LENGTH),
-        db_index=True)
-    issue = models.PositiveIntegerField(
-        editable=False,
-        default=TimestampGenerator())
-    expire = models.PositiveIntegerField(
-        default=TimestampGenerator(CODE_EXPIRATION))
+    key = models.CharField(unique=True, max_length=CODE_KEY_LENGTH,
+        default=lambda: key_gen(CODE_KEY_LENGTH), db_index=True)
+    # auto_now_add defaults to now() when created
+    issue = models.DateTimeField(auto_now_add=True, editable=False)
+    # default now + ACCESS_TOKEN_EXPIRATION, need to pass callable function
+    expire = models.DateTimeField(editable=False, default=lambda: 
+        datetime.datetime.now() + datetime.timedelta(seconds=CODE_EXPIRATION)) 
+
     redirect_uri = models.URLField(null=True)
     scope = models.ManyToManyField(AccessRange)
 

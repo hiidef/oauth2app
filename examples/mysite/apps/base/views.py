@@ -14,7 +14,4 @@ def homepage(request):
         access_tokens = access_tokens.select_related()
         template["access_tokens"] = access_tokens
         template["clients"] = clients
-    return render_to_response(
-        'base/homepage.html', 
-        template, 
-        RequestContext(request))
+    return render_to_response('base/homepage.html', template, RequestContext(request))

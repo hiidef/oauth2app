@@ -4,3 +4,10 @@ docs/_build/*
 .DS_Store
 oauth2app.egg-info/
 *.pyc
+build/
+dist/
+# eclipse specific:
+.project
+.pydevproject
+.settings
+

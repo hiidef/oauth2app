@@ -14,13 +14,17 @@
 <body>
 	<ul id="header">
 		{% if request.user.is_authenticated %}
-		<li><a href="/account/logout">Logout</a></li>
-		<li><a href="/account/clients">Your Clients</a></li>
+    		<li><a href="/account/logout">Logout</a></li>
+            {% if request.user.is_staff %}
+                <li><a href="/admin/doc/">Docs</a></li>
+                <li><a href="/admin/">Admin</a></li>
+            {% endif %} 
+    		<li><a href="/account/clients">Your Clients</a></li>
 		{% else %} 
-		<li><a href="/account/login">Login</a></li>
-		<li><a href="/account/signup">Signup</a></li>
+    		<li><a href="/account/login">Login</a></li>
+    		<li><a href="/account/signup">Signup</a></li>
 		{% endif %} 
-		<li><a href="/">Home</a></li>
+        <li><a href="/">Home</a></li>
 	</ul>	
 	<div id="content">
 		{% block content %}{% endblock %}
