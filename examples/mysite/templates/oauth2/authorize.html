@@ -8,7 +8,8 @@
 	<h1>Authorize</h1>
 
 	<div class="content_container">
-		<p>Grant “{{ client.name }}” access to {% if access_ranges %}the following parts of{% endif %} your account?</p>
+		<p>Grant <strong style="font-weight:bold;">{{ client.name }}</strong> access
+        to {% if access_ranges %}the following parts of{% endif %} your account?</p>
 		{% if access_ranges %}
 		<table class="data">
 			<tr>
@@ -22,7 +23,8 @@
 			</tr>
 			{% endfor %}
 		</table>
-		<p>This allows “{{ client.name }}” to access parts of your sample application user account using authenticated OAuth 2.0 requests.</p>
+		<p>This allows <strong style="font-weight:bold;">{{ client.name }}</strong> to access 
+        parts of your sample application user account using authenticated OAuth 2.0 requests.</p>
 		{% endif %}
 	</div>
 	

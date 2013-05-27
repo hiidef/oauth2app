@@ -3,15 +3,19 @@
 
 """OAuth 2.0 Authorization"""
 
+from django.http import HttpResponseRedirect
+try: 
+    from django.http.request import absolute_http_url_re
+except ImportError:  # try old location, Django 1.3 was defined here:
+    from django.http import absolute_http_url_re
 
-from django.http import absolute_http_url_re, HttpResponse, HttpResponseRedirect, HttpResponseBadRequest
 from urllib import urlencode
 from .consts import ACCESS_TOKEN_EXPIRATION, REFRESHABLE
 from .consts import CODE, TOKEN, CODE_AND_TOKEN
 from .consts import AUTHENTICATION_METHOD, MAC, BEARER, MAC_KEY_LENGTH
 from .exceptions import OAuth2Exception
 from .lib.uri import add_parameters, add_fragments, normalize
-from .models import Client, AccessRange, Code, AccessToken, KeyGenerator
+from .models import Client, AccessRange, Code, AccessToken, key_gen
 
 
 class AuthorizationException(OAuth2Exception):
@@ -73,8 +77,8 @@ class InvalidScope(AuthorizationException):
 
 
 RESPONSE_TYPES = {
-    "code":CODE,
-    "token":TOKEN}
+    "code": CODE,
+    "token": TOKEN}
 
 
 class Authorizer(object):
@@ -98,12 +102,8 @@ class Authorizer(object):
     valid = False
     error = None
 
-    def __init__(
-            self,
-            scope=None,
-            authentication_method=AUTHENTICATION_METHOD,
-            refreshable=REFRESHABLE,
-            response_type=CODE):
+    def __init__(self, scope=None, authentication_method=AUTHENTICATION_METHOD,
+            refreshable=REFRESHABLE, response_type=CODE):
         if response_type not in [CODE, TOKEN, CODE_AND_TOKEN]:
             raise OAuth2Exception("Possible values for response_type"
                 " are oauth2app.consts.CODE, oauth2app.consts.TOKEN, "
@@ -251,8 +251,8 @@ class Authorizer(object):
             raise UnvalidatedRequest("This request is invalid or has not"
                 "been validated.")
         parameters = {
-            "response_type":self.response_type,
-            "client_id":self.client_id}
+            "response_type": self.response_type,
+            "client_id": self.client_id}
         if self.redirect_uri is not None:
             parameters["redirect_uri"] = self.redirect_uri
         if self.state is not None:
@@ -301,7 +301,7 @@ class Authorizer(object):
                 if self.scope is not None:
                     fragments['scope'] = ' '.join(self.scope)
                 if self.authentication_method == MAC:
-                    access_token.mac_key = KeyGenerator(MAC_KEY_LENGTH)()
+                    access_token.mac_key = key_gen(MAC_KEY_LENGTH)
                     fragments["mac_key"] = access_token.mac_key
                     fragments["mac_algorithm"] = "hmac-sha-256"
                     fragments["token_type"] = "mac"

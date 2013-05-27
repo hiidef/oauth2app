@@ -1,6 +1,8 @@
 #-*- coding: utf-8 -*-
 
-import functools, inspect
+
+import functools
+import inspect
 
 
 def decorator(func):
@@ -15,7 +17,7 @@ def decorator(func):
     if isinstance(func, type):
         def class_wrapper(*args, **kw):
             if isFuncArg(*args, **kw):
-                return func()(*args, **kw) # create class before usage
+                return func()(*args, **kw)  # create class before usage
             return func(*args, **kw)
         class_wrapper.__name__ = func.__name__
         class_wrapper.__module__ = func.__module__

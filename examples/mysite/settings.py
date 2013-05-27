@@ -2,7 +2,6 @@
 
 import os
 
-
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
@@ -13,7 +12,8 @@ MANAGERS = ADMINS
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3', 
-        'NAME': 'mysite.sqlite',      
+        # default location: oauth2app/examples/mysite
+        'NAME': os.path.join(os.path.dirname(__file__), 'mysite.sqlite'),      
         'USER': '',      
         'PASSWORD': '',  
         'HOST': '',      
@@ -62,7 +62,11 @@ TEMPLATE_LOADERS = (
 )
 
 TEMPLATE_CONTEXT_PROCESSORS = (
+    'django.contrib.auth.context_processors.auth',
     'django.core.context_processors.request',
+    'django.core.context_processors.media',
+    'django.core.context_processors.static',
+    'django.contrib.messages.context_processors.messages',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -84,6 +88,8 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.admin',
+    'django.contrib.admindocs',
     'mysite.apps.base',
     'mysite.apps.client',
     'mysite.apps.account',
@@ -91,10 +97,15 @@ INSTALLED_APPS = (
     'mysite.apps.api',
     'uni_form',
     'oauth2app',
-    'django_nose',
 )
 
-TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
+try:
+    import django_nose
+    INSTALLED_APPS += ('django_nose', )
+    TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
+except ImportError:
+    pass
+
 
 LOGGING = {
     'version': 1,
@@ -113,4 +124,3 @@ LOGGING = {
         },
     }
 }
-

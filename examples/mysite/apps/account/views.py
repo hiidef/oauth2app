@@ -7,8 +7,9 @@ from django.template import RequestContext
 from django.contrib import auth
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from oauth2app.models import Client, AccessRange
+from oauth2app.models import Client
 from .forms import SignupForm, LoginForm, CreateClientForm, ClientRemoveForm
+
 
 @login_required
 def clients(request):
@@ -25,13 +26,8 @@ def clients(request):
             form = CreateClientForm()           
     else:
         form = CreateClientForm()
-    template = {
-        "form":form, 
-        "clients":Client.objects.filter(user=request.user)}
-    return render_to_response(
-        'account/clients.html', 
-        template, 
-        RequestContext(request))    
+    template = {"form": form, "clients": Client.objects.filter(user=request.user)}
+    return render_to_response('account/clients.html', template, RequestContext(request))    
 
 
 def login(request):
@@ -45,20 +41,14 @@ def login(request):
             return HttpResponseRedirect("/")
     else:
         form = LoginForm()
-    template = {"form":form}
-    return render_to_response(
-        'account/login.html', 
-        template, 
-        RequestContext(request))
- 
-    
+    template = {"form": form}
+    return render_to_response('account/login.html', template, RequestContext(request))
+
+
 @login_required    
 def logout(request):
     auth.logout(request)
-    return render_to_response(
-        'account/logout.html', 
-        {}, 
-        RequestContext(request))
+    return render_to_response('account/logout.html', {}, RequestContext(request))
 
 
 def signup(request):
@@ -76,8 +66,6 @@ def signup(request):
             return HttpResponseRedirect("/")
     else:
         form = SignupForm()
-    template = {"form":form}
-    return render_to_response(
-        'account/signup.html', 
-        template, 
-        RequestContext(request))
+    context = {"form": form}
+    return render_to_response('account/signup.html', context, RequestContext(request))
+
