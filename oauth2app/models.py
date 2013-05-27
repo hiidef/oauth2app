@@ -82,7 +82,7 @@ class Client(models.Model):
         unique=True,
         max_length=CLIENT_SECRET_LENGTH,
         default=KeyGenerator(CLIENT_SECRET_LENGTH))
-    redirect_uri = models.URLField(null=True)
+    redirect_uri = models.URLField(max_length=1024,null=True)
 
 
 class AccessRange(models.Model):
