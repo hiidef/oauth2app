@@ -5,12 +5,15 @@
 
 
 import simplejson as json
-from django.http import absolute_http_url_re, HttpResponse, HttpResponseRedirect, HttpResponseBadRequest
 from urllib import urlencode
+
+from django.http import absolute_http_url_re, HttpResponse, HttpResponseRedirect, HttpResponseBadRequest
+from django.core.exceptions import SuspiciousOperation
+
 from .consts import ACCESS_TOKEN_EXPIRATION, REFRESHABLE
 from .consts import CODE, TOKEN, CODE_AND_TOKEN
 from .consts import AUTHENTICATION_METHOD, MAC, BEARER, MAC_KEY_LENGTH
-from .consts import USE_NATIVE_APPLICATION
+from .consts import REDIRECT_CLASS
 from .exceptions import OAuth2Exception
 from .lib.uri import add_parameters, add_fragments, normalize
 from .models import Client, AccessRange, Code, AccessToken, KeyGenerator
@@ -196,7 +199,9 @@ class Authorizer(object):
         if self.authorized_response_type & RESPONSE_TYPES[self.response_type] == 0:
             raise UnauthorizedClient("Response type %s not allowed." %
                 self.response_type)
-        if not USE_NATIVE_APPLICATION and not absolute_http_url_re.match(self.redirect_uri):
+        try:
+            REDIRECT_CLASS(self.redirect_uri)
+        except SuspiciousOperation:
             raise InvalidRequest('Absolute URI required for redirect_uri')
         # Scope
         if self.authorized_scope is not None and self.scope is None:
@@ -218,7 +223,7 @@ class Authorizer(object):
         if self.redirect_uri is None:
             raise MissingRedirectURI('No redirect_uri to send response.')
         if not absolute_http_url_re.match(self.redirect_uri):
-            raise MissingRedirectURI('Absolute redirect_uri required.')
+             raise MissingRedirectURI('Absolute redirect_uri required.')
 
     def error_redirect(self):
         """In the event of an error, return a Django HttpResponseRedirect
@@ -314,7 +319,7 @@ class Authorizer(object):
                 parameters['state'] = self.state
             redirect_uri = add_parameters(self.redirect_uri, parameters)
             redirect_uri = add_fragments(redirect_uri, fragments)
-            return HttpResponseRedirect(redirect_uri)
+            return REDIRECT_CLASS(redirect_uri)
         else:
             raise UnauthenticatedUser("Django user object associated with the "
                 "request is not authenticated.")

@@ -3,8 +3,11 @@
 
 """OAuth 2.0 Default Values."""
 
+import sys
 
 from django.conf import settings
+from django.http import HttpResponseRedirect
+
 from .exceptions import OAuth2Exception
 
 
@@ -52,5 +55,14 @@ TOKEN = 1
 CODE = 2
 # Grants both style parameters.
 CODE_AND_TOKEN = CODE | TOKEN
-# 
-USE_NATIVE_APPLICATION = getattr(settings, "OAUTH2_USE_NATIVE_APPLICATION", False)
+# redirect_class
+REDIRECT_CLASS = getattr(settings, "OAUTH2_REDIRECT_CLASS", HttpResponseRedirect)
+if isinstance(REDIRECT_CLASS, basestring):
+    pos = REDIRECT_CLASS.rfind('.')
+    module_name = REDIRECT_CLASS[:pos]
+    cls_name = REDIRECT_CLASS[pos+1:]
+
+    __import__(module_name, {}, {}, [])
+    module = sys.modules[module_name]
+
+    REDIRECT_CLASS = getattr(module, cls_name)

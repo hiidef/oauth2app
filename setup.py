@@ -8,7 +8,7 @@ setup(
 
     packages = find_packages(),
 
-    install_requires = ['Django>=1.2.3', 'simplejson>=2.1.5', "django-uni-form>=0.8.0"],
+    install_requires = ['Django>=1.2.3', 'simplejson>=2.1.5'],
     include_package_data = True,
 
     # metadata for upload to PyPI
