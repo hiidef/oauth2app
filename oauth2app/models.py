@@ -70,6 +70,7 @@ class Client(models.Model):
       random string*
     * *redirect_uri:* A string representing the client redirect_uri.
       *Default None*
+    * *auto_authorize:* Don't ask the user to confirm authorization.
 
     """
     name = models.CharField(max_length=256)
@@ -85,6 +86,7 @@ class Client(models.Model):
         max_length=CLIENT_SECRET_LENGTH,
         default=KeyGenerator(CLIENT_SECRET_LENGTH))
     redirect_uri = models.URLField(null=True)
+    auto_authorize = models.BooleanField()
 
 
 class AccessRange(models.Model):
