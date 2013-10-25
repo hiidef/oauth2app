@@ -105,7 +105,8 @@ class AccessRange(models.Model):
     """
     key = models.CharField(unique=True, max_length=255, db_index=True)
     description = models.TextField(blank=True)
-
+    ttl = models.BigIntegerField(null=True, blank=True,
+                                 help_text="Number of seconds before this scope is removed from an access token.")
 
 class AccessToken(models.Model):
     """Stores access token data.

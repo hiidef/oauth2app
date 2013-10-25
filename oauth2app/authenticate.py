@@ -3,7 +3,7 @@
 
 """OAuth 2.0 Authentication"""
 
-
+import time
 from hashlib import sha256
 from urlparse import parse_qsl
 try: import simplejson as json
@@ -124,6 +124,13 @@ class Authenticator(object):
         else:
             raise InvalidRequest("Request authentication failed, no "
                 "authentication credentials provided.")
+        
+        # Remove expired scopes
+        scope_expiry_threshold = time.time() - self.access_token.issue
+        for scope in list(self.access_token.scope.all()):
+            if scope.ttl is not None and \
+               scope.ttl < scope_expiry_threshold:
+                self.access_token.scope.remove(scope)
         if self.authorized_scope is not None:
             token_scope = set([x.key for x in self.access_token.scope.all()])
             new_scope = self.authorized_scope - token_scope
