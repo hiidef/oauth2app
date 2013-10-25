@@ -87,6 +87,9 @@ class Client(models.Model):
         default=KeyGenerator(CLIENT_SECRET_LENGTH))
     redirect_uri = models.URLField(null=True)
     auto_authorize = models.BooleanField()
+    
+    all_scopes_allowable = models.BooleanField()
+    allowable_scopes = models.ManyToManyField('AccessRange', blank=True)
 
 
 class AccessRange(models.Model):

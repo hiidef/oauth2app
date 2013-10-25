@@ -204,7 +204,10 @@ class Authorizer(object):
         if self.authorized_scope is not None and self.scope is None:
             self.scope = self.authorized_scope
         if self.scope is not None:
-            self.access_ranges = AccessRange.objects.filter(key__in=self.scope)
+            if self.client.all_scopes_allowable:
+                self.access_ranges = AccessRange.objects.filter(key__in=self.scope)
+            else:
+                self.access_ranges = self.client.allowable_scopes.filter(key__in=self.scope)
             access_ranges = set(self.access_ranges.values_list('key', flat=True))
             difference = access_ranges.symmetric_difference(self.scope)
             if len(difference) != 0:
