@@ -1,0 +1,23 @@
+{% extends "oauth2app/base.html" %}
+
+{% block content %}
+<h1>Authorize external OAuth application?</h1>
+
+<form method="post" action="{% url "oauth2app:authorize" %}">{% csrf_token %}
+  <p>The application <strong id="client-name">{{ client.name }}</strong>,
+     provided by <strong id="client-owner">{% if client.user.first_name or client.user.last_name %}{{ client.user.first_name }}
+     {{ client.user.last_name }}{% else %}{{ client.user.username }}{% endif %}</strong>, {{ authorizer }}
+     would like permission to{% if not access_ranges %} act on your behalf. It has asked for no specific permissions, and so its access will be very limited.</p>{% else %}:</p>
+     
+     <dl>{% for access_range in access_ranges %}
+       <dt data-scope="{{ access_range.key }}">{{ access_range.label }}</dt>{% if access_range.description or access_range.ttl %}
+       <dd>{{ access_range.description }}{% if access_range.description and access_range.ttl %}<br>{% endif %}{% if access_range.ttl %}
+       <em>Once granted, this permission will expire in {{ access_range.ttl }} seconds.</em>{% endif %}</dd>{% endif %}{% endfor %}
+     </dl>{% endif %}
+
+     Are you happy for this to happen?</p>
+  {{ form }}
+  <input type="submit" name="accept" value="Yes"/>
+  <input type="submit" name="decline" value="No"/>
+</form>
+{% endblock %}
