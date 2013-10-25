@@ -9,6 +9,8 @@ from hashlib import sha512
 from uuid import uuid4
 from django.db import models
 from django.conf import settings
+from django.db.models import get_model
+from django.contrib.auth.models import UNUSABLE_PASSWORD
 from .consts import CLIENT_KEY_LENGTH, CLIENT_SECRET_LENGTH
 from .consts import ACCESS_TOKEN_LENGTH, REFRESH_TOKEN_LENGTH
 from .consts import ACCESS_TOKEN_EXPIRATION, MAC_KEY_LENGTH, REFRESHABLE
@@ -16,7 +18,7 @@ from .consts import CODE_KEY_LENGTH, CODE_EXPIRATION
 
 
 AUTH_USER_MODEL = getattr(settings, 'AUTH_USER_MODEL', 'auth.User')
-
+SCOPE_USER_PREFIX = getattr(settings, 'AUTH_OAUTH_SCOPE_USER_PREFIX', 'o2s_')
 
 class TimestampGenerator(object):
     """Callable Timestamp Generator that returns a UNIX time integer.
@@ -108,8 +110,20 @@ class AccessRange(models.Model):
     """
     key = models.CharField(unique=True, max_length=255, db_index=True)
     description = models.TextField(blank=True)
+    permission_user = models.ForeignKey(AUTH_USER_MODEL, null=True, blank=True,
+                                        help_text="An auto-created user whose permissions this scope allows access to.")
     ttl = models.BigIntegerField(null=True, blank=True,
                                  help_text="Number of seconds before this scope is removed from an access token.")
+    
+    def save(self, *args, **kwargs):
+        if not self.permission_user:
+            user_model = get_model(*AUTH_USER_MODEL.split('.'))
+            self.permission_user = user_model.objects.create(
+                username=SCOPE_USER_PREFIX + uuid4().hex[:16],
+                first_name='OAuth2 permissions granted by',
+                last_name=self.key,
+                password=UNUSABLE_PASSWORD)
+        super(AccessRange, self).save(*args, **kwargs)
 
 class AccessToken(models.Model):
     """Stores access token data.
