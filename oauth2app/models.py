@@ -109,6 +109,7 @@ class AccessRange(models.Model):
 
     """
     key = models.CharField(unique=True, max_length=255, db_index=True)
+    label = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     permission_user = models.ForeignKey(AUTH_USER_MODEL, null=True, blank=True,
                                         help_text="An auto-created user whose permissions this scope allows access to.")
