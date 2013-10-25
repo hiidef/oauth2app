@@ -89,7 +89,7 @@ class Client(models.Model):
         default=KeyGenerator(CLIENT_SECRET_LENGTH))
     redirect_uri = models.URLField(null=True)
     auto_authorize = models.BooleanField()
-    
+
     all_scopes_allowable = models.BooleanField()
     allowable_scopes = models.ManyToManyField('AccessRange', blank=True)
 
@@ -115,7 +115,7 @@ class AccessRange(models.Model):
                                         help_text="An auto-created user whose permissions this scope allows access to.")
     ttl = models.BigIntegerField(null=True, blank=True,
                                  help_text="Number of seconds before this scope is removed from an access token.")
-    
+
     def save(self, *args, **kwargs):
         if not self.permission_user:
             user_model = get_model(*AUTH_USER_MODEL.split('.'))
@@ -125,6 +125,9 @@ class AccessRange(models.Model):
                 last_name=self.key,
                 password=UNUSABLE_PASSWORD)
         super(AccessRange, self).save(*args, **kwargs)
+
+    def __unicode__(self):
+        return self.key
 
 class AccessToken(models.Model):
     """Stores access token data.
