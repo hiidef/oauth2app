@@ -24,6 +24,7 @@ class OAuth2ProxyUser(User):
     last_name = property(lambda self: self.user.last_name)
     is_active = property(lambda self: self.user.is_active)
     date_joined = property(lambda self: self.user.date_joined)
+    groups = property(lambda self: self.user.groups)
 
     # Only allow a client to act as staff or a superuser if one of its scopes
     # enables it to do so.
