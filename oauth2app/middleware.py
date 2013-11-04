@@ -17,8 +17,9 @@ class OAuth2Middleware(object):
             request.user = OAuth2ProxyUser(authenticator.access_token)
 
     def process_response(self, request, response):
-        if isinstance(request.user, OAuth2ProxyUser):
-            response['X-OAuth2-Scopes'] = ' '.join(request.user.scopes)
+        user = getattr(request, 'user', None)
+        if user:
+            response['X-OAuth2-Scopes'] = ' '.join(user.scopes)
 
         if response.status_code == httplib.UNAUTHORIZED:
             authenticate = response.get('WWW-Authenticate', None)
