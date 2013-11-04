@@ -401,8 +401,8 @@ class TokenGenerator(object):
         self.access_token.token = KeyGenerator(ACCESS_TOKEN_LENGTH)()
         self.access_token.refresh_token = KeyGenerator(REFRESH_TOKEN_LENGTH)()
         self.access_token.expire = TimestampGenerator(ACCESS_TOKEN_EXPIRATION)()
-        access_ranges = AccessRange.objects.filter(key__in=self.scope) if self.scope else []
-        self.access_token.scope = access_ranges
+        if self.scope is not None:
+            self.access_token.scope = AccessRange.objects.filter(key__in=self.scope)
         self.access_token.save()
         return self.access_token
 
