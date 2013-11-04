@@ -2,7 +2,7 @@ import time
 import datetime
 
 from django.contrib import admin
-from django.template.defaultfilters import timeuntil
+from django.template.defaultfilters import timeuntil, timesince
 
 from oauth2app.models import Client, AccessToken, AccessRange
 
@@ -17,7 +17,10 @@ class AccessTokenAdmin(admin.ModelAdmin):
     
     def remaining(self, obj):
         remaining = int(obj.expire - time.time())
-        return timeuntil(datetime.datetime.fromtimestamp(obj.expire)) if remaining > 0 else 'expired'
+        if remaining > 0:
+            return timeuntil(datetime.datetime.fromtimestamp(obj.expire))
+        else:
+            return "expired {0} ago".format(timesince(datetime.datetime.fromtimestamp(obj.expire)))
 
 class AccessRangeAdmin(admin.ModelAdmin):
     pass
