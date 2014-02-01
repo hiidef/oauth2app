@@ -4,6 +4,7 @@ try: import simplejson as json
 except ImportError: import json
 try:
     from django.contrib.auth import get_user_model  # Django 1.5+
+    User = get_user_model()
 except:
     from django.contrib.auth.models import User
 from oauth2app.models import Client
@@ -30,14 +31,14 @@ class BaseTestCase(unittest.TestCase):
     client_application = None
 
     def setUp(self):
-        self.user = (get_user_model() or User).objects.create_user(
+        self.user = User.objects.create_user(
             USER_USERNAME,
             USER_EMAIL,
             USER_PASSWORD)
         self.user.first_name = USER_FIRSTNAME
         self.user.last_name = USER_LASTNAME
         self.user.save()
-        self.client = (get_user_model() or User).objects.create_user(CLIENT_USERNAME, CLIENT_EMAIL)
+        self.client = User.objects.create_user(CLIENT_USERNAME, CLIENT_EMAIL)
         self.client_application = Client.objects.create(
             name="TestApplication",
             user=self.client)
