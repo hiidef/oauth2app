@@ -9,13 +9,15 @@ try:
     from django.http.request import absolute_http_url_re  # Django 1.5+
 except ImportError:
     from django.http import absolute_http_url_re
+from django.db.models.loading import get_model
 from urllib import urlencode
 from .consts import ACCESS_TOKEN_EXPIRATION, REFRESHABLE
 from .consts import CODE, TOKEN, CODE_AND_TOKEN
 from .consts import AUTHENTICATION_METHOD, MAC, BEARER, MAC_KEY_LENGTH
+from .consts import CLIENT_MODEL
 from .exceptions import OAuth2Exception
 from .lib.uri import add_parameters, add_fragments, normalize
-from .models import Client, AccessRange, Code, AccessToken, KeyGenerator
+from .models import AccessRange, Code, AccessToken, KeyGenerator
 
 
 class AuthorizationException(OAuth2Exception):
@@ -172,11 +174,13 @@ class Authorizer(object):
 
     def _validate(self):
         """Validate the request."""
+        ClientModel = get_model(*CLIENT_MODEL.split('.', 1))
+
         if self.client_id is None:
             raise InvalidRequest('No client_id')
         try:
-            self.client = Client.objects.get(key=self.client_id)
-        except Client.DoesNotExist:
+            self.client = ClientModel.objects.get(key=self.client_id)
+        except ClientModel.DoesNotExist:
             raise InvalidClient("client_id %s doesn't exist" % self.client_id)
         # Redirect URI
         if self.redirect_uri is None:

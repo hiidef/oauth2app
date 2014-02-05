@@ -9,6 +9,7 @@ from hashlib import sha512
 from uuid import uuid4
 from django.db import models
 from django.conf import settings
+from .consts import CLIENT_MODEL
 from .consts import CLIENT_KEY_LENGTH, CLIENT_SECRET_LENGTH
 from .consts import ACCESS_TOKEN_LENGTH, REFRESH_TOKEN_LENGTH
 from .consts import ACCESS_TOKEN_EXPIRATION, MAC_KEY_LENGTH, REFRESHABLE
@@ -127,7 +128,7 @@ class AccessToken(models.Model):
       refreshable. *Default False*
 
     """
-    client = models.ForeignKey(Client)
+    client = models.ForeignKey(CLIENT_MODEL)
     user = models.ForeignKey(AUTH_USER_MODEL)
     token = models.CharField(
         unique=True,
@@ -175,7 +176,7 @@ class Code(models.Model):
     * *scope:* A list of oauth2app.models.AccessRange objects. *Default None*
 
     """
-    client = models.ForeignKey(Client)
+    client = models.ForeignKey(CLIENT_MODEL)
     user = models.ForeignKey(AUTH_USER_MODEL)
     key = models.CharField(
         unique=True,
