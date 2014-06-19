@@ -62,6 +62,7 @@ class Authenticator(object):
     access_token = None
     auth_type = None
     auth_value = None
+    bearer_token = None
     error = None
     attempted_validation = False
 
@@ -91,11 +92,12 @@ class Authenticator(object):
 
         *Returns None*"""
         self.request = request
-        self.bearer_token = request.REQUEST.get('bearer_token')
         if "HTTP_AUTHORIZATION" in self.request.META:
             auth = self.request.META["HTTP_AUTHORIZATION"].split()
             self.auth_type = auth[0].lower()
             self.auth_value = " ".join(auth[1:]).strip()
+        else:
+            self.bearer_token = self.request.REQUEST.get('bearer_token')
         self.request_hostname = self.request.META.get("REMOTE_HOST")
         self.request_port = self.request.META.get("SERVER_PORT")
         try:
