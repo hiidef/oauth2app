@@ -6,7 +6,11 @@
 
 try: import simplejson as json
 except ImportError: import json
-from django.http import absolute_http_url_re, HttpResponseRedirect
+from django.http import HttpResponseRedirect
+try:
+    from django.http.request import absolute_http_url_re  # Django 1.5+
+except ImportError:
+    from django.http import absolute_http_url_re
 from urllib import urlencode
 from .consts import ACCESS_TOKEN_EXPIRATION, REFRESHABLE
 from .consts import CODE, TOKEN, CODE_AND_TOKEN
@@ -177,7 +181,7 @@ class Authorizer(object):
         except Client.DoesNotExist:
             raise InvalidClient("client_id %s doesn't exist" % self.client_id)
         # Redirect URI
-        if self.redirect_uri is None:
+        if not self.redirect_uri:
             if self.client.redirect_uri is None:
                 raise MissingRedirectURI("No redirect_uri"
                     "provided or registered.")
