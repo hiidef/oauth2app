@@ -91,7 +91,7 @@ class Authenticator(object):
 
         *Returns None*"""
         self.request = request
-        self.bearer_token = request.REQUEST.get('bearer_token')
+        self.bearer_token = request.REQUEST.get('access_token')
         if "HTTP_AUTHORIZATION" in self.request.META:
             auth = self.request.META["HTTP_AUTHORIZATION"].split()
             self.auth_type = auth[0].lower()
