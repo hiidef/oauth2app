@@ -1,14 +1,11 @@
 from setuptools import setup, find_packages
 
 
-requirements = [l.strip() for l in open('requirements.txt').readlines()]
-
-
 setup(
     name="oauth2app",
     version="0.3.0",
     packages=find_packages(),
-    install_requires=requirements,
+    install_requires=['Django>=1.2.3', 'simplejson>=2.1.5'],
     include_package_data=True,
 
     # metadata for upload to PyPI
