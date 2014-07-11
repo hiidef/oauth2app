@@ -82,6 +82,7 @@ class Client(models.Model):
         unique=True,
         max_length=CLIENT_SECRET_LENGTH,
         default=KeyGenerator(CLIENT_SECRET_LENGTH))
+    can_self_grant = models.BooleanField(default=False)
     redirect_uri = models.URLField(null=True)
 
 

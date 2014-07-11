@@ -210,6 +210,8 @@ class TokenGenerator(object):
 
     def _validate_access_credentials(self):
         """Validate the request's access credentials."""
+        if not self.client.can_self_grant:
+            raise InvalidClient('Client authentication failed.')
         if self.client_secret is None and "HTTP_AUTHORIZATION" in self.request.META:
             authorization = self.request.META["HTTP_AUTHORIZATION"]
             auth_type, auth_value = authorization.split()[0:2]
@@ -405,7 +407,7 @@ class TokenGenerator(object):
 
     def _get_client_credentials_token(self):
         """Generate an access token after client_credentials authorization."""
-        access_token = AccessToken.objects.create(
+        self.access_token = AccessToken.objects.create(
             user=self.client.user,
             client=self.client,
             refreshable=self.refreshable)
