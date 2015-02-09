@@ -18,7 +18,7 @@ class OAuth2Middleware(object):
 
     def process_response(self, request, response):
         user = getattr(request, 'user', None)
-        if user:
+        if user and hasattr(user, 'scopes'):
             response['X-OAuth2-Scopes'] = ' '.join(user.scopes)
 
         if response.status_code == httplib.UNAUTHORIZED:
