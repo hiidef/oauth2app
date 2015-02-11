@@ -12,6 +12,7 @@ from django.conf import settings
 from django.db.models import get_model
 from django.contrib.auth.models import UNUSABLE_PASSWORD
 from .consts import CLIENT_KEY_LENGTH, CLIENT_SECRET_LENGTH
+from .consts import SCOPE_LENGTH
 from .consts import ACCESS_TOKEN_LENGTH, REFRESH_TOKEN_LENGTH
 from .consts import ACCESS_TOKEN_EXPIRATION, MAC_KEY_LENGTH, REFRESHABLE
 from .consts import CODE_KEY_LENGTH, CODE_EXPIRATION
@@ -108,7 +109,7 @@ class AccessRange(models.Model):
       *Default None*
 
     """
-    key = models.CharField(unique=True, max_length=255, db_index=True)
+    key = models.CharField(unique=True, max_length=SCOPE_LENGTH, db_index=True)
     label = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     permission_user = models.ForeignKey(AUTH_USER_MODEL, null=True, blank=True,

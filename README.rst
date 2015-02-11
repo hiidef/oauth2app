@@ -1,3 +1,7 @@
+Other projects have been able to devote the time and energy necessary to maintain oauth apps that we cannot, so while this library is not exactly unmaintained, you should probably be using something else. We highly recommend `djoauth2 <https://github.com/Locu/djoauth2/>`_ and `Django OAuth Toolkit <https://github.com/evonove/django-oauth-toolkit/>`_
+
+
+
 
 * See http://hiidef.github.com/oauth2app for documentation. 
 * See https://github.com/hiidef/oauth2app for source code.

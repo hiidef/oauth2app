@@ -4,12 +4,12 @@
 """OAuth 2.0 Token Generation"""
 
 
+try: import simplejson as json
+except ImportError: import json
 from base64 import b64encode
 from django.http import HttpResponse
 from django.contrib.auth import authenticate
 from django.views.decorators.csrf import csrf_exempt
-try: import simplejson as json
-except ImportError: import json
 from .exceptions import OAuth2Exception
 from .consts import ACCESS_TOKEN_EXPIRATION, REFRESH_TOKEN_LENGTH, ACCESS_TOKEN_LENGTH
 from .consts import AUTHENTICATION_METHOD, MAC, BEARER, MAC_KEY_LENGTH
@@ -403,6 +403,8 @@ class TokenGenerator(object):
         self.access_token.expire = TimestampGenerator(ACCESS_TOKEN_EXPIRATION)()
         if self.scope is not None:
             self.access_token.scope = AccessRange.objects.filter(key__in=self.scope)
+        elif not self.access_token.scope.exists():
+            self.access_token.scope = []
         self.access_token.save()
         return self.access_token
 
@@ -415,6 +417,6 @@ class TokenGenerator(object):
         if self.authentication_method == MAC:
             access_token.mac_key = KeyGenerator(MAC_KEY_LENGTH)()
         access_ranges = AccessRange.objects.filter(key__in=self.scope) if self.scope else []
-        self.access_token.scope = access_ranges
-        self.access_token.save()
-        return self.access_token
+        access_token.scope = access_ranges
+        access_token.save()
+        return access_token

@@ -177,3 +177,7 @@ class ScopeTestCase(unittest.TestCase):
             HTTP_AUTHORIZATION="Bearer %s" % token)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.content, USER_FIRSTNAME)
+<<<<<<< HEAD
+=======
+
+>>>>>>> hiidef/develop

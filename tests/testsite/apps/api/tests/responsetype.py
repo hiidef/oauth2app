@@ -1,6 +1,5 @@
 #-*- coding: utf-8 -*-
 
-from base64 import b64encode
 from urlparse import urlparse, parse_qs
 from urllib import urlencode
 from django.utils import unittest

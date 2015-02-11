@@ -12,6 +12,8 @@ from .exceptions import OAuth2Exception
 CLIENT_KEY_LENGTH = getattr(settings, "OAUTH2_CLIENT_KEY_LENGTH", 30)
 # Length of the client secret.
 CLIENT_SECRET_LENGTH = getattr(settings, "OAUTH2_CLIENT_SECRET_LENGTH", 30)
+# Length of the scope key.
+SCOPE_LENGTH = getattr(settings, "OAUTH2_SCOPE_LENGTH", 255)
 # Length of the code key.
 CODE_KEY_LENGTH = getattr(settings, "OAUTH2_CODE_KEY_LENGTH", 30)
 # Length of the MAC authentication key.
