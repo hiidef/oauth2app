@@ -10,7 +10,7 @@ from uuid import uuid4
 from django.db import models
 from django.conf import settings
 from django.db.models import get_model
-from django.contrib.auth.models import UNUSABLE_PASSWORD
+from django.contrib.auth.hashers import make_password
 from .consts import CLIENT_KEY_LENGTH, CLIENT_SECRET_LENGTH
 from .consts import SCOPE_LENGTH
 from .consts import ACCESS_TOKEN_LENGTH, REFRESH_TOKEN_LENGTH
@@ -124,7 +124,7 @@ class AccessRange(models.Model):
                 username=SCOPE_USER_PREFIX + uuid4().hex[:16],
                 first_name='OAuth2 permissions granted by',
                 last_name=self.key,
-                password=UNUSABLE_PASSWORD)
+                password=make_password(None))
         super(AccessRange, self).save(*args, **kwargs)
 
     def __unicode__(self):
