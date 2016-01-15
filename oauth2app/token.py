@@ -271,7 +271,7 @@ class TokenGenerator(object):
                     raise InvalidClient('Client authentication failed.')
             else:
                 raise InvalidClient('Client authentication failed.')
-        else:
+        elif self.client_secret != self.client.secret:
             raise InvalidClient('Client authentication failed.')
         if self.username is not None:
             user = authenticate(username=self.username, password=self.password)
