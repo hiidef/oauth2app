@@ -102,6 +102,9 @@ class AccessRange(models.Model):
     key = models.CharField(unique=True, max_length=SCOPE_LENGTH, db_index=True)
     description = models.TextField(blank=True)
 
+    def __unicode__(self):
+        return self.key
+
 
 class AccessToken(models.Model):
     """Stores access token data.
