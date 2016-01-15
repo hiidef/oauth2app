@@ -185,7 +185,7 @@ class Code(models.Model):
         default=TimestampGenerator())
     expire = models.PositiveIntegerField(
         default=TimestampGenerator(CODE_EXPIRATION))
-    redirect_uri = models.URLField(null=True)
+    redirect_uri = models.URLField(null=True, max_length=2000)
     scope = models.ManyToManyField(AccessRange)
 
 
