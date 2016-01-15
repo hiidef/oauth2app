@@ -13,6 +13,8 @@ from django.http import HttpResponse
 from .exceptions import OAuth2Exception
 from .models import AccessToken, AccessRange, TimestampGenerator
 from .consts import REALM, AUTHENTICATION_METHOD, MAC, BEARER
+from .utils import get_from_post_or_get_data
+
 
 class AuthenticationException(OAuth2Exception):
     """Authentication exception base class."""
@@ -91,7 +93,7 @@ class Authenticator(object):
 
         *Returns None*"""
         self.request = request
-        self.bearer_token = request.REQUEST.get('bearer_token')
+        self.bearer_token = get_from_post_or_get_data(request, 'bearer_token')
         if "HTTP_AUTHORIZATION" in self.request.META:
             auth = self.request.META["HTTP_AUTHORIZATION"].split()
             self.auth_type = auth[0].lower()
@@ -287,7 +289,7 @@ class JSONAuthenticator(Authenticator):
         Authenticator.__init__(self, scope=scope)
 
     def validate(self, request):
-        self.callback = request.REQUEST.get('callback')
+        self.callback = get_from_post_or_get_data(request, 'callback')
         return Authenticator.validate(self, request)
 
     def response(self, data):
