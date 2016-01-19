@@ -17,6 +17,7 @@ from .consts import REFRESHABLE
 from .lib.uri import normalize
 from .models import Client, AccessRange, Code, AccessToken, TimestampGenerator
 from .models import KeyGenerator
+from .utils import get_from_post_or_get_data
 
 
 class AccessTokenException(OAuth2Exception):
@@ -136,23 +137,23 @@ class TokenGenerator(object):
         * *request:* Django HttpRequest object.
 
         """
-        self.grant_type = request.REQUEST.get('grant_type')
-        self.client_id = request.REQUEST.get('client_id')
+        self.grant_type = get_from_post_or_get_data(request, 'grant_type')
+        self.client_id = get_from_post_or_get_data(request, 'client_id')
         self.client_secret = request.POST.get('client_secret')
-        self.scope = request.REQUEST.get('scope')
+        self.scope = get_from_post_or_get_data(request, 'scope')
         if self.scope is not None:
             self.scope = set(self.scope.split())
         # authorization_code, see 4.1.3.  Access Token Request
-        self.code_key = request.REQUEST.get('code')
-        self.redirect_uri = request.REQUEST.get('redirect_uri')
+        self.code_key = get_from_post_or_get_data(request, 'code')
+        self.redirect_uri = get_from_post_or_get_data(request, 'redirect_uri')
         # refresh_token, see 6.  Refreshing an Access Token
-        self.refresh_token = request.REQUEST.get('refresh_token')
+        self.refresh_token = get_from_post_or_get_data(request, 'refresh_token')
         # password, see 4.3.2. Access Token Request
-        self.email = request.REQUEST.get('email')
-        self.username = request.REQUEST.get('username')
-        self.password = request.REQUEST.get('password')
+        self.email = get_from_post_or_get_data(request, 'email')
+        self.username = get_from_post_or_get_data(request, 'username')
+        self.password = get_from_post_or_get_data(request, 'password')
         # Optional json callback
-        self.callback = request.REQUEST.get('callback')
+        self.callback = get_from_post_or_get_data(request, 'callback')
         self.request = request
         try:
             self.validate()
@@ -271,7 +272,7 @@ class TokenGenerator(object):
                     raise InvalidClient('Client authentication failed.')
             else:
                 raise InvalidClient('Client authentication failed.')
-        else:
+        elif self.client_secret != self.client.secret:
             raise InvalidClient('Client authentication failed.')
         if self.username is not None:
             user = authenticate(username=self.username, password=self.password)

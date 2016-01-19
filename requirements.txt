@@ -1,2 +1,1 @@
-Django>=1.2.3
 django-uni-form>=0.8.0

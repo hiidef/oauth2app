@@ -7,8 +7,11 @@
 import time
 from hashlib import sha512
 from uuid import uuid4
+
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils.deconstruct import deconstructible
+
 from .consts import CLIENT_KEY_LENGTH, CLIENT_SECRET_LENGTH
 from .consts import SCOPE_LENGTH
 from .consts import ACCESS_TOKEN_LENGTH, REFRESH_TOKEN_LENGTH
@@ -16,6 +19,7 @@ from .consts import ACCESS_TOKEN_EXPIRATION, MAC_KEY_LENGTH, REFRESHABLE
 from .consts import CODE_KEY_LENGTH, CODE_EXPIRATION
 
 
+@deconstructible
 class TimestampGenerator(object):
     """Callable Timestamp Generator that returns a UNIX time integer.
 
@@ -33,6 +37,7 @@ class TimestampGenerator(object):
         return int(time.time()) + self.seconds
 
 
+@deconstructible
 class KeyGenerator(object):
     """Callable Key Generator that returns a random keystring.
 
@@ -101,6 +106,9 @@ class AccessRange(models.Model):
     """
     key = models.CharField(unique=True, max_length=SCOPE_LENGTH, db_index=True)
     description = models.TextField(blank=True)
+
+    def __unicode__(self):
+        return self.key
 
 
 class AccessToken(models.Model):
@@ -185,7 +193,7 @@ class Code(models.Model):
         default=TimestampGenerator())
     expire = models.PositiveIntegerField(
         default=TimestampGenerator(CODE_EXPIRATION))
-    redirect_uri = models.URLField(null=True)
+    redirect_uri = models.URLField(null=True, max_length=2000)
     scope = models.ManyToManyField(AccessRange)
 
 

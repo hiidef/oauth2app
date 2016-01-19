@@ -2,11 +2,11 @@
 
 
 """OAuth 2.0 Authorization"""
-
+import re
 
 try: import simplejson as json
 except ImportError: import json
-from django.http import absolute_http_url_re, HttpResponseRedirect
+from django.http import HttpResponseRedirect
 from urllib import urlencode
 from .consts import ACCESS_TOKEN_EXPIRATION, REFRESHABLE
 from .consts import CODE, TOKEN, CODE_AND_TOKEN
@@ -14,6 +14,10 @@ from .consts import AUTHENTICATION_METHOD, MAC, BEARER, MAC_KEY_LENGTH
 from .exceptions import OAuth2Exception
 from .lib.uri import add_parameters, add_fragments, normalize
 from .models import Client, AccessRange, Code, AccessToken, KeyGenerator
+from .utils import get_from_post_or_get_data
+
+
+absolute_http_url_re = re.compile(r"^https?://", re.I)
 
 
 class AuthorizationException(OAuth2Exception):
@@ -151,13 +155,13 @@ class Authorizer(object):
         * *request:* Django HttpRequest object.
 
         *Returns None*"""
-        self.response_type = request.REQUEST.get('response_type')
-        self.client_id = request.REQUEST.get('client_id')
-        self.redirect_uri = request.REQUEST.get('redirect_uri')
-        self.scope = request.REQUEST.get('scope')
+        self.response_type = get_from_post_or_get_data(request, 'response_type')
+        self.client_id = get_from_post_or_get_data(request, 'client_id')
+        self.redirect_uri = get_from_post_or_get_data(request, 'redirect_uri')
+        self.scope = get_from_post_or_get_data(request, 'scope')
         if self.scope is not None:
             self.scope = set(self.scope.split())
-        self.state = request.REQUEST.get('state')
+        self.state = get_from_post_or_get_data(request, 'state')
         self.user = request.user
         self.request = request
         try:
