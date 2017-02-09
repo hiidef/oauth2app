@@ -7,7 +7,7 @@ import time
 try: import simplejson as json
 except ImportError: import json
 from hashlib import sha256
-from urlparse import parse_qsl
+from urllib.parse import parse_qsl
 from django.conf import settings
 from django.http import HttpResponse
 from .exceptions import OAuth2Exception
@@ -91,7 +91,7 @@ class Authenticator(object):
 
         *Returns None*"""
         self.request = request
-        self.bearer_token = request.REQUEST.get('bearer_token')
+        self.bearer_token = request.POST.get('bearer_token') or request.GET.get('bearer_token')
         if self.request.META.get("HTTP_AUTHORIZATION"):
             auth = self.request.META["HTTP_AUTHORIZATION"].split()
             self.auth_type = auth[0].lower()

@@ -9,7 +9,7 @@ from hashlib import sha512
 from uuid import uuid4
 from django.db import models
 from django.conf import settings
-from django.db.models import get_model
+from django.apps import apps
 from django.contrib.auth.hashers import make_password
 from .consts import CLIENT_KEY_LENGTH, CLIENT_SECRET_LENGTH
 from .consts import SCOPE_LENGTH
@@ -119,7 +119,7 @@ class AccessRange(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.permission_user:
-            user_model = get_model(*AUTH_USER_MODEL.split('.'))
+            user_model = apps.get_model(*AUTH_USER_MODEL.split('.'))
             self.permission_user = user_model.objects.create(
                 username=SCOPE_USER_PREFIX + uuid4().hex[:16],
                 first_name='OAuth2 permissions granted by',

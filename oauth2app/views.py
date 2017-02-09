@@ -26,9 +26,9 @@ class AuthorizeView(TemplateResponseMixin, View):
         self.authorizer = Authorizer()
         try:
             self.authorizer.validate(request)
-        except MissingRedirectURI, e:
+        except MissingRedirectURI as e:
             return self.missing_redirect_url_view(request)
-        except AuthorizationException, e:
+        except AuthorizationException as e:
             # The request is malformed or invalid. Automatically
             # redirects to the provided redirect URL.
             return self.authorizer.error_redirect()

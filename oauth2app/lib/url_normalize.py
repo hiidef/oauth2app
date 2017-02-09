@@ -32,8 +32,7 @@ __version__ = 1.1
 
 import re
 import unicodedata
-import urlparse
-from urllib import quote, unquote
+import urllib.parse
 
 
 def url_normalize(url, charset='utf-8'):
@@ -50,7 +49,7 @@ def url_normalize(url, charset='utf-8'):
     """
 
     def _clean(string):
-        string = unicode(unquote(string), 'utf-8', 'replace')
+        string = str(urllib.parse.unquote(string), 'utf-8', 'replace')
         return unicodedata.normalize('NFC', string).encode('utf-8')
 
     default_port = {
@@ -65,7 +64,7 @@ def url_normalize(url, charset='utf-8'):
         'snews': 563,
         'snntp': 563,
     }
-    if isinstance(url, unicode):
+    if isinstance(url, str):
         url = url.encode(charset, 'ignore')
 
     # if there is no scheme use http as default scheme
@@ -96,7 +95,7 @@ def url_normalize(url, charset='utf-8'):
     fragment = quote(_clean(fragment), "~")
 
     # note care must be taken to only encode & and = characters as values
-    query = "&".join(["=".join([quote(_clean(t), "~:/?#[]@!$'()*+,;=") for t in q.split("=", 1)]) for q in query.split("&")])
+    query = "&".join(["=".join([urllib.parse.quote(_clean(t), "~:/?#[]@!$'()*+,;=") for t in q.split("=", 1)]) for q in query.split("&")])
 
     # Prevent dot-segments appearing in non-relative URI paths.
     if scheme in ["", "http", "https", "ftp", "file"]:
@@ -140,7 +139,7 @@ def url_normalize(url, charset='utf-8'):
         auth += ":" + port
     if url.endswith("#") and query == "" and fragment == "":
         path += "#"
-    return urlparse.urlunsplit((scheme, auth, path, query, fragment))
+    return urllib.parse.urlunsplit((scheme, auth, path, query, fragment))
 
 if __name__ == "__main__":
     import unittest
