@@ -77,7 +77,7 @@ class Client(models.Model):
 
     """
     name = models.CharField(max_length=256)
-    user = models.ForeignKey(AUTH_USER_MODEL)
+    user = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE)
     description = models.TextField(null=True, blank=True)
     key = models.CharField(
         unique=True,
@@ -113,7 +113,7 @@ class AccessRange(models.Model):
     label = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     permission_user = models.ForeignKey(AUTH_USER_MODEL, null=True, blank=True,
-                                        help_text="An auto-created user whose permissions this scope allows access to.")
+                                        help_text="An auto-created user whose permissions this scope allows access to.", on_delete=models.CASCADE)
     ttl = models.BigIntegerField(null=True, blank=True,
                                  help_text="Number of seconds before this scope is removed from an access token.")
 
@@ -152,8 +152,8 @@ class AccessToken(models.Model):
       refreshable. *Default False*
 
     """
-    client = models.ForeignKey(Client)
-    user = models.ForeignKey(AUTH_USER_MODEL)
+    client = models.ForeignKey(Client, on_delete=models.CASCADE)
+    user = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE)
     token = models.CharField(
         unique=True,
         max_length=ACCESS_TOKEN_LENGTH,
@@ -200,8 +200,8 @@ class Code(models.Model):
     * *scope:* A list of oauth2app.models.AccessRange objects. *Default None*
 
     """
-    client = models.ForeignKey(Client)
-    user = models.ForeignKey(AUTH_USER_MODEL)
+    client = models.ForeignKey(Client, on_delete=models.CASCADE)
+    user = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE)
     key = models.CharField(
         unique=True,
         max_length=CODE_KEY_LENGTH,
@@ -225,5 +225,5 @@ class MACNonce(models.Model):
     * *nonce:* A unique nonce string.
 
     """
-    access_token = models.ForeignKey(AccessToken)
+    access_token = models.ForeignKey(AccessToken, on_delete=models.CASCADE)
     nonce = models.CharField(max_length=30, db_index=True)
