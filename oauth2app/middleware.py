@@ -1,10 +1,11 @@
 import http.client
 
+from django.utils.deprecation import MiddlewareMixin
 from oauth2app.authenticate import Authenticator, AuthenticationException
 from oauth2app.consts import REALM
 from .backends import OAuth2ProxyUser
 
-class OAuth2Middleware(object):
+class OAuth2Middleware(MiddlewareMixin):
     def process_request(self, request):
         authenticator = Authenticator()
         try:
