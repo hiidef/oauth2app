@@ -28,7 +28,7 @@ class MissingRedirectURI(OAuth2Exception):
 
 class UnauthenticatedUser(OAuth2Exception):
     """The provided user is not internally authenticated, via
-    user.is_authenticated()"""
+    user.is_authenticated"""
     pass
 
 
@@ -279,7 +279,7 @@ class Authorizer(object):
         if not self.valid:
             raise UnvalidatedRequest("This request is invalid or has not "
                 "been validated.")
-        if self.user.is_authenticated():
+        if self.user.is_authenticated:
             parameters = {}
             fragments = {}
             if self.scope is not None:
