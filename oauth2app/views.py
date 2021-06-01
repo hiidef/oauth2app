@@ -1,5 +1,5 @@
 from django.contrib.auth.decorators import login_required
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.http import HttpResponseRedirect, HttpResponseBadRequest
 from django.utils.decorators import method_decorator
 
@@ -15,10 +15,10 @@ from . import forms
 
 class MissingRedirectURLView(TemplateView):
     template_name = 'oauth2app/missing-redirect-url.html'
-    
+
 class AuthorizeView(TemplateResponseMixin, View):
     template_name = 'oauth2app/authorize.html'
-    
+
     missing_redirect_url_view = staticmethod(MissingRedirectURLView.as_view())
 
     @method_decorator(login_required)
@@ -33,7 +33,7 @@ class AuthorizeView(TemplateResponseMixin, View):
             # redirects to the provided redirect URL.
             return self.authorizer.error_redirect()
         return super(AuthorizeView, self).dispatch(request)
-    
+
     def get_context_data(self):
         #import pdb;pdb.set_trace()
         return {'authorizer': self.authorizer,
