@@ -3,11 +3,10 @@
 
 """OAuth 2.0 Authorization"""
 
+import re
 
-try: import simplejson as json
-except ImportError: import json
-from django.http import absolute_http_url_re, HttpResponseRedirect
-from urllib import urlencode
+from django.http import HttpResponseRedirect
+from urllib.parse import urlencode
 from .consts import ACCESS_TOKEN_EXPIRATION, REFRESHABLE
 from .consts import CODE, TOKEN, CODE_AND_TOKEN
 from .consts import AUTHENTICATION_METHOD, MAC, BEARER, MAC_KEY_LENGTH
@@ -15,6 +14,7 @@ from .exceptions import OAuth2Exception
 from .lib.uri import add_parameters, add_fragments, normalize
 from .models import Client, AccessRange, Code, AccessToken, KeyGenerator
 
+absolute_http_url_re = re.compile(r"^https?://", re.I)
 
 class AuthorizationException(OAuth2Exception):
     """Authorization exception base class."""
@@ -28,7 +28,7 @@ class MissingRedirectURI(OAuth2Exception):
 
 class UnauthenticatedUser(OAuth2Exception):
     """The provided user is not internally authenticated, via
-    user.is_authenticated()"""
+    user.is_authenticated"""
     pass
 
 
@@ -135,7 +135,7 @@ class Authorizer(object):
         *Returns HTTP Response redirect*"""
         try:
             self.validate(request)
-        except AuthorizationException, e:
+        except AuthorizationException:
             # The request is malformed or invalid. Automatically
             # redirects to the provided redirect URL.
             return self.error_redirect()
@@ -162,7 +162,7 @@ class Authorizer(object):
         self.request = request
         try:
             self._validate()
-        except AuthorizationException, e:
+        except AuthorizationException as e:
             self._check_redirect_uri()
             self.error = e
             raise e
@@ -202,7 +202,10 @@ class Authorizer(object):
         if self.authorized_scope is not None and self.scope is None:
             self.scope = self.authorized_scope
         if self.scope is not None:
-            self.access_ranges = AccessRange.objects.filter(key__in=self.scope)
+            if self.client.all_scopes_allowable:
+                self.access_ranges = AccessRange.objects.filter(key__in=self.scope)
+            else:
+                self.access_ranges = self.client.allowable_scopes.filter(key__in=self.scope)
             access_ranges = set(self.access_ranges.values_list('key', flat=True))
             difference = access_ranges.symmetric_difference(self.scope)
             if len(difference) != 0:
@@ -276,7 +279,7 @@ class Authorizer(object):
         if not self.valid:
             raise UnvalidatedRequest("This request is invalid or has not "
                 "been validated.")
-        if self.user.is_authenticated():
+        if self.user.is_authenticated:
             parameters = {}
             fragments = {}
             if self.scope is not None:

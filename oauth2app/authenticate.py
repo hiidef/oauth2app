@@ -3,11 +3,11 @@
 
 """OAuth 2.0 Authentication"""
 
-
+import time
 try: import simplejson as json
 except ImportError: import json
 from hashlib import sha256
-from urlparse import parse_qsl
+from urllib.parse import parse_qsl
 from django.conf import settings
 from django.http import HttpResponse
 from .exceptions import OAuth2Exception
@@ -91,8 +91,8 @@ class Authenticator(object):
 
         *Returns None*"""
         self.request = request
-        self.bearer_token = request.REQUEST.get('bearer_token')
-        if "HTTP_AUTHORIZATION" in self.request.META:
+        self.bearer_token = request.POST.get('bearer_token') or request.GET.get('bearer_token')
+        if self.request.META.get("HTTP_AUTHORIZATION"):
             auth = self.request.META["HTTP_AUTHORIZATION"].split()
             self.auth_type = auth[0].lower()
             self.auth_value = " ".join(auth[1:]).strip()
@@ -100,7 +100,7 @@ class Authenticator(object):
         self.request_port = self.request.META.get("SERVER_PORT")
         try:
             self._validate()
-        except AuthenticationException, e:
+        except AuthenticationException as e:
             self.error = e
             raise e
         self.valid = True
@@ -123,6 +123,13 @@ class Authenticator(object):
         else:
             raise InvalidRequest("Request authentication failed, no "
                 "authentication credentials provided.")
+        
+        # Remove expired scopes
+        scope_expiry_threshold = time.time() - self.access_token.issue
+        for scope in list(self.access_token.scope.all()):
+            if scope.ttl is not None and \
+               scope.ttl < scope_expiry_threshold:
+                self.access_token.scope.remove(scope)
         if self.authorized_scope is not None:
             token_scope = set([x.key for x in self.access_token.scope.all()])
             new_scope = self.authorized_scope - token_scope

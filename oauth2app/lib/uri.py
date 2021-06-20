@@ -4,9 +4,8 @@
 """OAuth 2.0 URI Helper Functions"""
 
 
-from urlparse import urlparse, urlunparse, parse_qsl
-from urllib import urlencode
-from url_normalize import url_normalize
+from urllib.parse import urlparse, urlunparse, parse_qsl, urlencode
+from .url_normalize import url_normalize
  
  
 def add_parameters(url, parameters):

@@ -4,7 +4,11 @@ from urlparse import urlparse, parse_qs
 from urllib import urlencode
 from django.utils import unittest
 from django.test.client import Client as DjangoTestClient
-from django.contrib.auth.models import User
+try:
+    from django.contrib.auth import get_user_model  # Django 1.5+
+    User = get_user_model()
+except:
+    from django.contrib.auth.models import User
 from oauth2app.models import Client
 
 

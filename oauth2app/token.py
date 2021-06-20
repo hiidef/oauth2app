@@ -11,7 +11,7 @@ from django.http import HttpResponse
 from django.contrib.auth import authenticate
 from django.views.decorators.csrf import csrf_exempt
 from .exceptions import OAuth2Exception
-from .consts import ACCESS_TOKEN_EXPIRATION, REFRESH_TOKEN_LENGTH
+from .consts import ACCESS_TOKEN_EXPIRATION, REFRESH_TOKEN_LENGTH, ACCESS_TOKEN_LENGTH
 from .consts import AUTHENTICATION_METHOD, MAC, BEARER, MAC_KEY_LENGTH
 from .consts import REFRESHABLE
 from .lib.uri import normalize
@@ -156,7 +156,7 @@ class TokenGenerator(object):
         self.request = request
         try:
             self.validate()
-        except AccessTokenException, e:
+        except AccessTokenException:
             return self.error_response()
         return self.grant_response()
 
@@ -167,7 +167,7 @@ class TokenGenerator(object):
         *Returns None*"""
         try:
             self._validate()
-        except AccessTokenException, e:
+        except AccessTokenException as e:
             self.error = e
             raise e
         self.valid = True
@@ -212,13 +212,17 @@ class TokenGenerator(object):
         """Validate the request's access credentials."""
         if self.client_secret is None and "HTTP_AUTHORIZATION" in self.request.META:
             authorization = self.request.META["HTTP_AUTHORIZATION"]
-            auth_type, auth_value = authorization.split()[0:2]
-            if auth_type.lower() == "basic":
-                credentials = "%s:%s" % (self.client.key, self.client.secret)
-                if auth_value != b64encode(credentials):
-                    raise InvalidClient('Client authentication failed.')
-            else:
+            try:
+                auth_type, auth_value = authorization.split()[:2]
+            except ValueError: # malformed Authorization header
                 raise InvalidClient('Client authentication failed.')
+            else:
+                if auth_type.lower() == "basic":
+                    credentials = "%s:%s" % (self.client.key, self.client.secret)
+                    if auth_value != b64encode(credentials):
+                        raise InvalidClient('Client authentication failed.')
+                else:
+                    raise InvalidClient('Client authentication failed.')
         elif self.client_secret != self.client.secret:
             raise InvalidClient('Client authentication failed.')
 
@@ -394,9 +398,10 @@ class TokenGenerator(object):
 
     def _get_refresh_token(self):
         """Generate an access token after refresh authorization."""
+        self.access_token.token = KeyGenerator(ACCESS_TOKEN_LENGTH)()
         self.access_token.refresh_token = KeyGenerator(REFRESH_TOKEN_LENGTH)()
         self.access_token.expire = TimestampGenerator(ACCESS_TOKEN_EXPIRATION)()
-        if self.scope:
+        if self.scope is not None:
             self.access_token.scope = AccessRange.objects.filter(key__in=self.scope)
         elif not self.access_token.scope.exists():
             self.access_token.scope = []

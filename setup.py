@@ -3,7 +3,6 @@ from setuptools import setup, find_packages
 
 requirements = [l.strip() for l in open('requirements.txt').readlines()]
 
-
 setup(
     name="oauth2app",
     version="0.3.0",

@@ -1,0 +1,33 @@
+import http.client
+
+from django.utils.deprecation import MiddlewareMixin
+from oauth2app.authenticate import Authenticator, AuthenticationException
+from oauth2app.consts import REALM
+from .backends import OAuth2ProxyUser
+
+class OAuth2Middleware(MiddlewareMixin):
+    def process_request(self, request):
+        authenticator = Authenticator()
+        try:
+            authenticator.validate(request)
+        except AuthenticationException as e:
+            if authenticator.bearer_token or authenticator.auth_type in ['bearer', 'mac']:
+                return authenticator.error_response(content="You didn't authenticate.")
+        else:
+            request.user = OAuth2ProxyUser(authenticator.access_token)
+
+    def process_response(self, request, response):
+        user = getattr(request, 'user', None)
+        if user and hasattr(user, 'scopes'):
+            response['X-OAuth2-Scopes'] = ' '.join(user.scopes)
+
+        if response.status_code == http.client.UNAUTHORIZED:
+            authenticate = response.get('WWW-Authenticate', None)
+            if 'Bearer realm="' not in authenticate:
+                if authenticate:
+                    authenticate = 'Bearer realm="%s", %s' % (REALM, authenticate)
+                else:
+                    authenticate = 'Bearer realm="%s"' % REALM
+            response['WWW-Authenticate'] = authenticate
+
+        return response
